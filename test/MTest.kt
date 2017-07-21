@@ -47,15 +47,7 @@ fun main(args: Array<String>) {
                     val output = StringOutputStream()
                     val env = getDefaultEnvironment(output)
 
-                    src
-                            .lookaheadIterator()
-                            .tokenize(env)
-                            .noWhitespaceOrComments()
-                            .lookaheadIterator()
-                            .parse(env)
-                            .lookaheadIterator()
-                            .generateIR(env)
-                            .evaluate(env)
+                    src.interpret(env)
 
                     if (output.string != type.expected) {
                         System.err.println("Incorrect output for $name : $output (expected ${type.expected})")
