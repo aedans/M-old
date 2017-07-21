@@ -61,6 +61,22 @@ val stringLiteralParser: Parser = mFunction { _, tokens ->
     }
 }
 
+typealias NumberLiteralExpression = Number
+val numberLiteralParser: Parser = mFunction { _, tokens ->
+    tokens[0].takeIfInstance<NumberLiteralToken>()?.let {
+        tokens.drop(1)
+        when (it.type) {
+            BYTE_TYPE -> it.text.toString().toByte()
+            SHORT_TYPE -> it.text.toString().toShort()
+            INT_TYPE -> it.text.toString().toInt()
+            LONG_TYPE -> it.text.toString().toLong()
+            FLOAT_TYPE -> it.text.toString().toFloat()
+            DOUBLE_TYPE -> it.text.toString().toDouble()
+            else -> throw Exception("Unrecognized number type ${it.type}")
+        }
+    }
+}
+
 object CParenExpression : TokenExpression(CParenToken)
 val sExpressionParser: Parser = mFunction { env, tokens ->
     tokens.takeIf { it[0] === OParenToken }?.let {

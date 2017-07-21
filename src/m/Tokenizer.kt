@@ -128,5 +128,36 @@ private fun LookaheadIterator<Char>.tokenizeStringLiteral(): String = when (this
     else -> this[0].also { drop(1) } + tokenizeStringLiteral()
 }
 
+typealias NumberType = Int
+val BYTE_TYPE = 0
+val SHORT_TYPE = 1
+val INT_TYPE = 2
+val LONG_TYPE = 3
+val FLOAT_TYPE = 4
+val DOUBLE_TYPE = 5
+class NumberLiteralToken(string: String, val type: NumberType) : Token(string)
+
+val numberLiteralTokenizer: Tokenizer = mFunction { _, str ->
+    val number = String(str.takeWhile { it in '0'..'9' || it == '.' }.toCharArray())
+    number.takeIf { it.isNotEmpty() }?.let {
+        str.drop(number.length)
+        var drop = true
+        val type = when (str[0]) {
+            'b', 'B' -> BYTE_TYPE
+            's', 'S' -> SHORT_TYPE
+            'i', 'I' -> INT_TYPE
+            'l', 'L' -> LONG_TYPE
+            'f', 'F' -> FLOAT_TYPE
+            'd', 'D' -> DOUBLE_TYPE
+            else -> {
+                drop = false
+                if (number.contains('.')) FLOAT_TYPE else INT_TYPE
+            }
+        }
+        if (drop) str.drop(1)
+        NumberLiteralToken(number, type)
+    }
+}
+
 private infix fun Iterable<Char>.startsWith(charSequence: CharSequence) = iterator() startsWith charSequence
 private infix fun Iterator<Char>.startsWith(charSequence: CharSequence) = charSequence.all { next() == it }

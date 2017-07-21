@@ -2,6 +2,7 @@
 
 import m.*
 import java.io.OutputStream
+import javax.xml.stream.events.Characters
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
@@ -49,8 +50,10 @@ fun main(args: Array<String>) {
 
                     src.interpret(env)
 
-                    if (output.string != type.expected) {
-                        System.err.println("Incorrect output for $name : $output (expected ${type.expected})")
+                    val oString = output.string.filter { it != '\r' && it != '\n' }
+                    val eString = type.expected.filter { it != '\r' && it != '\n' }
+                    if (oString != eString) {
+                        System.err.println("Incorrect output for $name : $oString (expected $eString)")
                     } else {
                         println("Passed test $name")
                     }
@@ -103,4 +106,21 @@ val helloWorld6 by TestType.SuccessTest("Hello, world!") src """
 
 val helloWorld7 by TestType.SuccessTest("Hello, world!") src """
 (print (if (if #f #t #f) "error" "Hello, world!"))
+"""
+
+val numberTokenizerTest by TestType.SuccessTest("""
+class kotlin.Byte
+class kotlin.Short
+class kotlin.Int
+class kotlin.Long
+class kotlin.Float
+class kotlin.Double
+"""
+) src """
+(println (class-of 0B))
+(println (class-of 0S))
+(println (class-of 0I))
+(println (class-of 0L))
+(println (class-of 0F))
+(println (class-of 0D))
 """

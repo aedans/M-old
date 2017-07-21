@@ -28,6 +28,7 @@ inline fun <reified T : Expression> expressionIRGenerator(): IRGenerator = mFunc
 }
 
 val stringLiteralIRGenerator: IRGenerator = expressionIRGenerator<StringLiteralExpression>()
+val numberLiteralIRGenerator: IRGenerator = expressionIRGenerator<NumberLiteralExpression>()
 
 data class IdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) {
     override fun toString() = "$name :: $memoryLocation"
@@ -54,14 +55,17 @@ data class DefIRExpression(val name: String, val expression: IRExpression) {
 
 val defIRGenerator: IRGenerator = uniqueSExpression<DefExpression> { env, expression ->
     val name = (expression[1] as IdentifierExpression).name
+    env.symbolTable[name] = MemoryLocation.HeapPointer(env.virtualMemory.malloc())
     @Suppress("NAME_SHADOWING")
     val expression = (expression[2] as Expression).toIRExpression(env)
-    env.symbolTable[name] = MemoryLocation.HeapPointer(env.virtualMemory.malloc())
     DefIRExpression(name, expression)
 }
 
-data class LambdaIRExpression(val argName: String, val expressions: List<IRExpression>, val value: IRExpression) {
-    override fun toString() = "(lambda ($argName) " +
+data class LambdaIRExpression(
+        val expressions: List<IRExpression>,
+        val value: IRExpression
+) {
+    override fun toString() = "(lambda () " +
             expressions.joinToString(separator = " ") + (if (expressions.isEmpty()) "" else " ") +
             "$value)"
 }
@@ -77,7 +81,7 @@ val lambdaIRGenerator: IRGenerator = uniqueSExpression<LambdaExpression> { env, 
     }
     env.symbolTable[argName] = temp
     env.symbolTable.stackDepth--
-    LambdaIRExpression(argName, expressions.dropLast(1), expressions.last())
+    LambdaIRExpression(expressions.dropLast(1), expressions.last())
 }
 
 data class IfIRExpression(val condition: IRExpression, val ifTrue: IRExpression, val ifFalse: IRExpression) {
