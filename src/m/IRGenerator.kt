@@ -28,8 +28,8 @@ inline fun <reified T : Expression> expressionIRGenerator(): IRGenerator =
 
 val stringLiteralIRGenerator: IRGenerator = expressionIRGenerator<StringLiteralExpression>()
 
-data class IdentifierIRExpression(val name: String, val variableType: VariableType) {
-    override fun toString() = "name :: $variableType"
+data class IdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) {
+    override fun toString() = "name :: $memoryLocation"
 }
 
 val identifierIRGenerator: IRGenerator = mFunction { env, expression ->
@@ -48,7 +48,7 @@ val defIRGenerator: IRGenerator = mFunction { env, expression ->
         val name = (it[1] as IdentifierExpression).name
         @Suppress("NAME_SHADOWING")
         val expression = (it[2] as Expression).toIRExpression(env)
-        env.symbolTable[name] = VariableType.HeapPointer(env.virtualMemory.malloc())
+        env.symbolTable[name] = MemoryLocation.HeapPointer(env.virtualMemory.malloc())
         DefIRExpression(name, expression)
     }
 }

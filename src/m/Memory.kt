@@ -12,7 +12,7 @@ object GlobalMemoryRegistry {
     private val registeredNames = mutableListOf<String>()
 
     fun addAllToTable(symbolTable: SymbolTable) {
-        registeredNames.forEachIndexed { i, name -> symbolTable[name] = VariableType.Value(i) }
+        registeredNames.forEachIndexed { i, name -> symbolTable[name] = MemoryLocation.Value(i) }
     }
 
     operator fun provideDelegate(nothing: Nothing?, property: KProperty<*>) = object : ReadOnlyProperty<Nothing?, Int> {
@@ -43,28 +43,24 @@ class VirtualMemory {
         expand(index)
         return if (heap[index] == null) index else malloc(index + 1)
     }
-
-    fun free(index: Int) {
-        heap[index] = null
-    }
 }
 
-sealed class VariableType : (VirtualMemory) -> Any {
-    class Value(val value: Any) : VariableType() {
+sealed class MemoryLocation : (VirtualMemory) -> Any {
+    class Value(val value: Any) : MemoryLocation() {
         override fun invoke(virtualMemory: VirtualMemory): Any = value
         override fun toString() = "Value($value)"
     }
 
-    class HeapPointer(val index: Int) : VariableType() {
+    class HeapPointer(val index: Int) : MemoryLocation() {
         override fun invoke(virtualMemory: VirtualMemory) = virtualMemory[index]!!
         override fun toString() = "HeapPointer($index)"
     }
 }
 
 class SymbolTable {
-    private val vars = HashMap<String, VariableType>()
+    private val vars = HashMap<String, MemoryLocation>()
     operator fun get(name: String) = vars[name]
-    operator fun set(name: String, type: VariableType) = vars.set(name, type)
+    operator fun set(name: String, type: MemoryLocation) = vars.set(name, type)
 }
 
 data class Environment(val virtualMemory: VirtualMemory, val symbolTable: SymbolTable) {
@@ -72,6 +68,6 @@ data class Environment(val virtualMemory: VirtualMemory, val symbolTable: Symbol
     operator fun set(name: String, obj: Any) {
         val index = virtualMemory.malloc()
         virtualMemory[index] = obj
-        symbolTable[name] = VariableType.HeapPointer(index)
+        symbolTable[name] = MemoryLocation.HeapPointer(index)
     }
 }

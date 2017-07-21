@@ -19,16 +19,16 @@ fun IRExpression.evaluate(
 
 val identifierEvaluator: Evaluator = mFunction { (virtualMemory, _), expression ->
     expression.takeIfInstance<IdentifierIRExpression>()?.let {
-        when (it.variableType) {
-            is VariableType.Value -> it.variableType.value
-            is VariableType.HeapPointer -> virtualMemory[it.variableType.index]
+        when (it.memoryLocation) {
+            is MemoryLocation.Value -> it.memoryLocation.value
+            is MemoryLocation.HeapPointer -> virtualMemory[it.memoryLocation.index]
         }
     }
 }
 
 val defEvaluator: Evaluator = mFunction { (virtualMemory, symbolTable), expression ->
     expression.takeIfInstance<DefIRExpression>()?.let {
-        val index = (symbolTable[it.name] as VariableType.HeapPointer).index
+        val index = (symbolTable[it.name] as MemoryLocation.HeapPointer).index
         virtualMemory[index] = it.expression
         index
     }
