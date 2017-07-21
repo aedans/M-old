@@ -23,13 +23,14 @@ fun Expression.toIRExpression(
 ) = irGenerators.firstNonNull { it(environment)(this) }
         ?: throw Exception("Unexpected expression ${this} (${this::class})")
 
-inline fun <reified T : Expression> expressionIRGenerator(): IRGenerator =
-        mFunction { _, expression -> expression.takeIfInstance<T>() }
+inline fun <reified T : Expression> expressionIRGenerator(): IRGenerator = mFunction { _, expression ->
+    expression.takeIfInstance<T>()
+}
 
 val stringLiteralIRGenerator: IRGenerator = expressionIRGenerator<StringLiteralExpression>()
 
 data class IdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) {
-    override fun toString() = "name :: $memoryLocation"
+    override fun toString() = "$name :: $memoryLocation"
 }
 
 val identifierIRGenerator: IRGenerator = mFunction { env, expression ->
@@ -39,18 +40,44 @@ val identifierIRGenerator: IRGenerator = mFunction { env, expression ->
     }
 }
 
+inline fun <reified T> uniqueSExpression(
+        crossinline func: (Environment, SExpression) -> IRExpression
+): IRGenerator = mFunction { env, expression ->
+    expression.takeIfInstance<SExpression>()?.takeIf { it.isNotEmpty() && it[0] is T }?.let {
+        func(env, it)
+    }
+}
+
+data class LambdaIRExpression(val argName: String, val expressions: List<IRExpression>, val value: IRExpression) {
+    override fun toString() = "(lambda ($argName) " +
+            expressions.joinToString(separator = " ") + (if (expressions.isEmpty()) "" else " ") +
+            "$value)"
+}
+
+val lambdaIRGenerator: IRGenerator = uniqueSExpression<LambdaExpression> { env, sExpression ->
+    val argNames = sExpression[1] as SExpression
+    val argName = (argNames[0] as IdentifierExpression).name
+    val temp = env.symbolTable[argName]
+    env.symbolTable[argName] = MemoryLocation.StackPointer(env.symbolTable.stackDepth++)
+    val expressions = when (argNames.size) {
+        1 -> sExpression.drop(2).map { it!!.toIRExpression(env) }
+        else -> listOf((listOf(LambdaExpression, argNames.drop(1)) + sExpression.drop(2)).toIRExpression(env))
+    }
+    env.symbolTable[argName] = temp
+    env.symbolTable.stackDepth--
+    LambdaIRExpression(argName, expressions.dropLast(1), expressions.last())
+}
+
 data class DefIRExpression(val name: String, val expression: IRExpression) {
     override fun toString() = "(def $name $expression)"
 }
 
-val defIRGenerator: IRGenerator = mFunction { env, expression ->
-    expression.takeIfInstance<SExpression>()?.takeIf { it[0] is DefExpression }?.let {
-        val name = (it[1] as IdentifierExpression).name
-        @Suppress("NAME_SHADOWING")
-        val expression = (it[2] as Expression).toIRExpression(env)
-        env.symbolTable[name] = MemoryLocation.HeapPointer(env.virtualMemory.malloc())
-        DefIRExpression(name, expression)
-    }
+val defIRGenerator: IRGenerator = uniqueSExpression<DefExpression> { env, expression ->
+    val name = (expression[1] as IdentifierExpression).name
+    @Suppress("NAME_SHADOWING")
+    val expression = (expression[2] as Expression).toIRExpression(env)
+    env.symbolTable[name] = MemoryLocation.HeapPointer(env.virtualMemory.malloc())
+    DefIRExpression(name, expression)
 }
 
 data class InvokeIRExpression(val expression: Expression, val arg: Expression) {

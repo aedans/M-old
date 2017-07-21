@@ -38,8 +38,11 @@ fun atomParser(token: Token, expression: Expression): Parser = mFunction { _, to
     }
 }
 
-val defParser = atomParser(DefToken, DefExpression)
 object DefExpression : TokenExpression(DefToken)
+val defParser = atomParser(DefToken, DefExpression)
+
+object LambdaExpression : TokenExpression(LambdaToken)
+val lambdaParser = atomParser(LambdaToken, LambdaExpression)
 
 typealias StringLiteralExpression = String
 val stringLiteralParser: Parser = mFunction { _, tokens ->

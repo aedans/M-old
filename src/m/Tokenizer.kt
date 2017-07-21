@@ -88,6 +88,9 @@ fun keywordTokenizer(string: String, token: Token): Tokenizer = mFunction { _, s
 object DefToken : Token("def")
 val defTokenizer = keywordTokenizer("def", DefToken)
 
+object LambdaToken : Token("lambda")
+val lambdaTokenizer = keywordTokenizer("lambda", LambdaToken)
+
 class IdentifierToken(name: String) : Token(name)
 val IDENTIFIER_IS_HEAD_INDEX by GlobalMemoryRegistry
 val IDENTIFIER_IS_TAIL_INDEX by GlobalMemoryRegistry

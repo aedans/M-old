@@ -71,3 +71,28 @@ val helloWorld2 by TestType.SuccessTest("Hello, world!") src """
 (def hello "Hello, world!")
 (print hello)
 """
+
+val helloWorld3 by TestType.SuccessTest("Hello, world!") src """
+(def hello "Hello, world!")
+(def test (lambda (x) (print x)))
+(test hello)
+"""
+
+val helloWorld4 by TestType.SuccessTest("Hello, world!") src """
+(def hello "Hello")
+(def comma ", ")
+(def world "world")
+(def exclamation "!")
+(def print4 (lambda (w x y z) (print w) (print x) (print y) (print z)))
+(print4 hello comma world exclamation)
+"""
+
+// Not strictly necessary, since helloWorld4 should expand to this
+val helloWorld5 by TestType.SuccessTest("Hello, world!") src """
+(def hello "Hello")
+(def comma ", ")
+(def world "world")
+(def exclamation "!")
+(def print4 (lambda (w) (lambda (x) (lambda (y) (lambda (z) (print w) (print x) (print y) (print z))))))
+(print4 hello comma world exclamation)
+"""

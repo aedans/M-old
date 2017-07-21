@@ -16,12 +16,14 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             whitespaceTokenizer,
             stringLiteralTokenizer,
             defTokenizer,
+            lambdaTokenizer,
             identifierTokenizer
     )
 
     env.virtualMemory[PARSER_INDEX] = mutableListOf(
             sExpressionParser,
             defParser,
+            lambdaParser,
             identifierParser,
             stringLiteralParser
     )
@@ -30,12 +32,14 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             stringLiteralIRGenerator,
             identifierIRGenerator,
             defIRGenerator,
+            lambdaIRGenerator,
             sExpressionIRGenerator
     )
 
     env.virtualMemory[EVALUATOR_INDEX] = mutableListOf(
             identifierEvaluator,
             defEvaluator,
+            lambdaEvaluator,
             invokeEvaluator
     )
 

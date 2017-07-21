@@ -1,5 +1,7 @@
 package m
 
+import java.util.*
+
 /**
  * Created by Aedan Smith.
  */
@@ -15,15 +17,10 @@ fun Iterator<IRExpression>.evaluate(environment: Environment) = forEach { it.eva
 fun IRExpression.evaluate(
         environment: Environment,
         evaluators: List<Evaluator> = environment.getEvaluators()
-) = evaluators.firstNonNull { it(environment)(this) } ?: this
+): Any = evaluators.firstNonNull { it(environment)(this) }?.evaluate(environment, evaluators) ?: this
 
 val identifierEvaluator: Evaluator = mFunction { (virtualMemory, _), expression ->
-    expression.takeIfInstance<IdentifierIRExpression>()?.let {
-        when (it.memoryLocation) {
-            is MemoryLocation.Value -> it.memoryLocation.value
-            is MemoryLocation.HeapPointer -> virtualMemory[it.memoryLocation.index]
-        }
-    }
+    expression.takeIfInstance<IdentifierIRExpression>()?.memoryLocation?.invoke(virtualMemory)
 }
 
 val defEvaluator: Evaluator = mFunction { (virtualMemory, symbolTable), expression ->
@@ -31,6 +28,21 @@ val defEvaluator: Evaluator = mFunction { (virtualMemory, symbolTable), expressi
         val index = (symbolTable[it.name] as MemoryLocation.HeapPointer).index
         virtualMemory[index] = it.expression
         index
+    }
+}
+
+val lambdaEvaluator: Evaluator = mFunction { env, expression ->
+    expression.takeIfInstance<LambdaIRExpression>()?.let { it ->
+        val closure = env.virtualMemory.stack.clone() as Vector<*>;
+        { arg: Any ->
+            closure.forEach { env.virtualMemory.stack.push(it) }
+            env.virtualMemory.stack.push(arg)
+            it.expressions.forEach { it.evaluate(env) }
+            val value = it.value.evaluate(env)
+            env.virtualMemory.stack.pop()
+            closure.forEach { env.virtualMemory.stack.pop() }
+            value
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 package m
 
+import java.util.*
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
@@ -27,6 +28,7 @@ object GlobalMemoryRegistry {
 }
 
 class VirtualMemory {
+    val stack = Stack<Any>()
     private val heap = ArrayList<Any?>()
     private fun expand(i: Int) {
         while (heap.size <= i)
@@ -55,12 +57,18 @@ sealed class MemoryLocation : (VirtualMemory) -> Any {
         override fun invoke(virtualMemory: VirtualMemory) = virtualMemory[index]!!
         override fun toString() = "HeapPointer($index)"
     }
+
+    class StackPointer(val index: Int) : MemoryLocation() {
+        override fun invoke(virtualMemory: VirtualMemory) = virtualMemory.stack[index]!!
+        override fun toString() = "StackPointer($index)"
+    }
 }
 
 class SymbolTable {
-    private val vars = HashMap<String, MemoryLocation>()
+    var stackDepth = 0
+    private val vars = HashMap<String, MemoryLocation?>()
     operator fun get(name: String) = vars[name]
-    operator fun set(name: String, type: MemoryLocation) = vars.set(name, type)
+    operator fun set(name: String, type: MemoryLocation?) = vars.set(name, type)
 }
 
 data class Environment(val virtualMemory: VirtualMemory, val symbolTable: SymbolTable) {
