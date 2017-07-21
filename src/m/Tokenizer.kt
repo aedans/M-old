@@ -91,6 +91,15 @@ val defTokenizer = keywordTokenizer("def", DefToken)
 object LambdaToken : Token("lambda")
 val lambdaTokenizer = keywordTokenizer("lambda", LambdaToken)
 
+object IfToken : Token("if")
+val ifTokenizer = keywordTokenizer("if", IfToken)
+
+object TrueToken : Token("#t")
+val trueTokenizer = keywordTokenizer("#t", TrueToken)
+
+object FalseToken : Token("#f")
+val falseTokenizer = keywordTokenizer("#f", FalseToken)
+
 class IdentifierToken(name: String) : Token(name)
 val IDENTIFIER_IS_HEAD_INDEX by GlobalMemoryRegistry
 val IDENTIFIER_IS_TAIL_INDEX by GlobalMemoryRegistry

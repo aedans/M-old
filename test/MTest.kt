@@ -96,3 +96,11 @@ val helloWorld5 by TestType.SuccessTest("Hello, world!") src """
 (def print4 (lambda (w) (lambda (x) (lambda (y) (lambda (z) (print w) (print x) (print y) (print z))))))
 (print4 hello comma world exclamation)
 """
+
+val helloWorld6 by TestType.SuccessTest("Hello, world!") src """
+(print (if #t "Hello, world!" "error"))
+"""
+
+val helloWorld7 by TestType.SuccessTest("Hello, world!") src """
+(print (if (if #f #t #f) "error" "Hello, world!"))
+"""

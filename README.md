@@ -21,3 +21,9 @@ The return value of the function is equal to the return value of the last \<expr
 
 Lambdas are curried; (lambda (x y) (+ x y)) is expanded to (lambda (x) (lambda (y) (+ x y))).
 Closures are supported.
+
+```
+(if <condition> <then> <else>)
+```
+
+If \<condition\> is true, evaluates \<then\>, otherwise evaluates \<else\>.

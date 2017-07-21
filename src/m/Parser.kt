@@ -44,6 +44,15 @@ val defParser = atomParser(DefToken, DefExpression)
 object LambdaExpression : TokenExpression(LambdaToken)
 val lambdaParser = atomParser(LambdaToken, LambdaExpression)
 
+object IfExpression : TokenExpression(IfToken)
+val ifParser = atomParser(IfToken, IfExpression)
+
+object TrueExpression : TokenExpression(TrueToken)
+val trueParser = atomParser(TrueToken, TrueExpression)
+
+object FalseExpression : TokenExpression(FalseToken)
+val falseParser = atomParser(FalseToken, FalseExpression)
+
 typealias StringLiteralExpression = String
 val stringLiteralParser: Parser = mFunction { _, tokens ->
     tokens[0].takeIfInstance<StringLiteralToken>()?.let {

@@ -17,6 +17,9 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             stringLiteralTokenizer,
             defTokenizer,
             lambdaTokenizer,
+            ifTokenizer,
+            trueTokenizer,
+            falseTokenizer,
             identifierTokenizer
     )
 
@@ -24,6 +27,9 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             sExpressionParser,
             defParser,
             lambdaParser,
+            ifParser,
+            trueParser,
+            falseParser,
             identifierParser,
             stringLiteralParser
     )
@@ -33,6 +39,9 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             identifierIRGenerator,
             defIRGenerator,
             lambdaIRGenerator,
+            ifIRGenerator,
+            trueIRGenerator,
+            falseIRGenerator,
             sExpressionIRGenerator
     )
 
@@ -40,6 +49,7 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             identifierEvaluator,
             defEvaluator,
             lambdaEvaluator,
+            ifEvaluator,
             invokeEvaluator
     )
 

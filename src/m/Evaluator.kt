@@ -32,7 +32,7 @@ val defEvaluator: Evaluator = mFunction { (virtualMemory, symbolTable), expressi
 }
 
 val lambdaEvaluator: Evaluator = mFunction { env, expression ->
-    expression.takeIfInstance<LambdaIRExpression>()?.let { it ->
+    expression.takeIfInstance<LambdaIRExpression>()?.let {
         val closure = env.virtualMemory.stack.clone() as Vector<*>;
         { arg: Any ->
             closure.forEach { env.virtualMemory.stack.push(it) }
@@ -43,6 +43,15 @@ val lambdaEvaluator: Evaluator = mFunction { env, expression ->
             closure.forEach { env.virtualMemory.stack.pop() }
             value
         }
+    }
+}
+
+val ifEvaluator: Evaluator = mFunction { env, expression ->
+    expression.takeIfInstance<IfIRExpression>()?.let {
+        if (it.condition.evaluate(env) as Boolean)
+            it.ifTrue.evaluate(env)
+        else
+            it.ifFalse.evaluate(env)
     }
 }
 
