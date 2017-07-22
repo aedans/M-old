@@ -4,7 +4,7 @@ package m
  * Created by Aedan Smith.
  */
 
-fun <T, R : Any> List<T>.firstNonNull(function: (T) -> R?): R? {
+inline fun <T, R : Any> List<T>.firstNonNull(function: (T) -> R?): R? {
     forEach {
         function(it)?.let {
             return it

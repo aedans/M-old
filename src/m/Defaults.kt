@@ -9,9 +9,9 @@ import kotlin.reflect.KClass
  */
 
 fun getDefaultEnvironment(out: OutputStream): Environment {
-    val env = Environment(VirtualMemory(), SymbolTable())
+    val env = GlobalEnvironment()
 
-    env.virtualMemory[TOKENIZER_INDEX] = mutableListOf(
+    env.setHeapValue(TOKENIZER_INDEX, mutableListOf(
             oParenTokenizer,
             cParenTokenizer,
             whitespaceTokenizer,
@@ -23,9 +23,9 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             trueTokenizer,
             falseTokenizer,
             identifierTokenizer
-    )
+    ))
 
-    env.virtualMemory[PARSER_INDEX] = mutableListOf(
+    env.setHeapValue(PARSER_INDEX, mutableListOf(
             sExpressionParser,
             stringLiteralParser,
             numberLiteralParser,
@@ -35,9 +35,9 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             trueParser,
             falseParser,
             identifierParser
-    )
+    ))
 
-    env.virtualMemory[IR_GENERATOR_INDEX] = mutableListOf(
+    env.setHeapValue(IR_GENERATOR_INDEX, mutableListOf(
             stringLiteralIRGenerator,
             numberLiteralIRGenerator,
             identifierIRGenerator,
@@ -47,37 +47,37 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             trueIRGenerator,
             falseIRGenerator,
             sExpressionIRGenerator
-    )
+    ))
 
-    env.virtualMemory[EVALUATOR_INDEX] = mutableListOf(
+    env.setHeapValue(EVALUATOR_INDEX, mutableListOf(
             identifierEvaluator,
             defEvaluator,
             lambdaEvaluator,
             ifEvaluator,
             invokeEvaluator
-    )
+    ))
 
-    env.virtualMemory[IDENTIFIER_IS_HEAD_INDEX] = mFunction<Char, Boolean> {
+    env.setHeapValue(IDENTIFIER_IS_HEAD_INDEX, mFunction<Char, Boolean> {
         it in 'a'..'z' || it in 'A'..'Z' || it in "+-*/=<>!"
-    }
+    })
 
-    env.virtualMemory[IDENTIFIER_IS_TAIL_INDEX] = mFunction<Char, Boolean> {
+    env.setHeapValue(IDENTIFIER_IS_TAIL_INDEX, mFunction<Char, Boolean> {
         it in '0'..'9' || it == '-' || it == '_' || it == ':'
-    }
+    })
 
-    env["print"] = mFunction<Any, Unit> { PrintStream(out).print(it) }
-    env["println"] = mFunction<Any, Unit> { PrintStream(out).println(it) }
-    env["class-of"] = mFunction<Any, KClass<*>> { it::class }
-    env["!"] = mFunction<Boolean, Boolean> { !it }
-    env["="] = mFunction<Any, Any, Any> { x, y -> x == y }
-//    env["<"] = mFunction<Int, Int, Boolean> { x, y -> x < y }
-//    env[">"] = mFunction<Int, Int, Boolean> { x, y -> x > y }
-//    env["+"] = mFunction<Int, Int, Int> { x, y -> x + y }
-//    env["-"] = mFunction<Int, Int, Int> { x, y -> x - y }
-//    env["*"] = mFunction<Int, Int, Int> { x, y -> x * y }
-//    env["/"] = mFunction<Int, Int, Int> { x, y -> x / y }
+    env.setVar("print", mFunction<Any, Unit> { PrintStream(out).print(it) })
+    env.setVar("println", mFunction<Any, Unit> { PrintStream(out).println(it) })
+    env.setVar("class-of", mFunction<Any, KClass<*>> { it::class })
+    env.setVar("!", mFunction<Boolean, Boolean> { !it })
+    env.setVar("=", mFunction<Any, Any, Any> { x, y -> x == y })
+    env.setVar("<", mFunction<Int, Int, Boolean> { x, y -> x < y })
+    env.setVar(">", mFunction<Int, Int, Boolean> { x, y -> x > y })
+    env.setVar("+", mFunction<Int, Int, Int> { x, y -> x + y })
+    env.setVar("-", mFunction<Int, Int, Int> { x, y -> x - y })
+    env.setVar("*", mFunction<Int, Int, Int> { x, y -> x * y })
+    env.setVar("/", mFunction<Int, Int, Int> { x, y -> x / y })
 
-    GlobalMemoryRegistry.addAllToTable(env.symbolTable)
+    GlobalMemoryRegistry.addAllToTable(env)
 
     return env
 }

@@ -108,7 +108,7 @@ val helloWorld7 by TestType.SuccessTest("Hello, world!") src """
 (print (if (if #f #t #f) "error" "Hello, world!"))
 """
 
-val numberTokenizerTest by TestType.SuccessTest("""
+val numberTokenizer by TestType.SuccessTest("""
 class kotlin.Byte
 class kotlin.Short
 class kotlin.Int
@@ -123,4 +123,22 @@ class kotlin.Double
 (println (class-of 0L))
 (println (class-of 0F))
 (println (class-of 0D))
+"""
+
+val fibonacci by TestType.SuccessTest("""
+0 : 0
+1 : 1
+2 : 1
+3 : 2
+4 : 3
+5 : 5
+6 : 8
+7 : 13
+8 : 21
+9 : 34
+10 : 55
+""") src """
+(def fib (lambda (x) (if (= x 0) 0 (if (= x 1) 1 (+ (fib (- x 1)) (fib (- x 2)))))))
+(def loop (lambda (x f) (if (= x 0) f (loop (- x 1) f)) (f x)))
+(loop 10 (lambda (x) (print x) (print " : ") (println (fib x))))
 """

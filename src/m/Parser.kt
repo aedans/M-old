@@ -21,8 +21,7 @@ typealias Parser = (Environment) -> (LookaheadIterator<Token>) -> Expression?
 
 val PARSER_INDEX by GlobalMemoryRegistry
 @Suppress("UNCHECKED_CAST")
-fun VirtualMemory.getParsers() = this[PARSER_INDEX] as List<Parser>
-fun Environment.getParsers() = virtualMemory.getParsers()
+fun Environment.getParsers() = getHeapValue(PARSER_INDEX) as List<Parser>
 
 fun LookaheadIterator<Token>.parse(environment: Environment) = collect { nextExpression(environment) }
 

@@ -13,7 +13,7 @@ object GlobalMemoryRegistry {
     private val registeredNames = mutableListOf<String>()
 
     fun addAllToTable(symbolTable: SymbolTable) {
-        registeredNames.forEachIndexed { i, name -> symbolTable[name] = MemoryLocation.Value(i) }
+        registeredNames.forEachIndexed { i, name -> symbolTable.setLocation(name, MemoryLocation.Value(i)) }
     }
 
     operator fun provideDelegate(nothing: Nothing?, property: KProperty<*>) = object : ReadOnlyProperty<Nothing?, Int> {
@@ -27,55 +27,76 @@ object GlobalMemoryRegistry {
     }
 }
 
-class VirtualMemory {
+sealed class MemoryLocation : (Memory) -> Any {
+    class Value(val value: Any) : MemoryLocation() {
+        override fun invoke(memory: Memory): Any = value
+        override fun toString() = "v$value"
+    }
+
+    class HeapPointer(val index: Int) : MemoryLocation() {
+        override fun invoke(memory: Memory) = memory.getHeapValue(index)!!
+        override fun toString() = "*h$index"
+    }
+
+    class StackPointer(val index: Int) : MemoryLocation() {
+        override fun invoke(memory: Memory) = memory.getStackValue(index)
+        override fun toString() = "*s$index"
+    }
+}
+
+interface SymbolTable {
+    fun getLocation(name: String): MemoryLocation?
+    fun setLocation(name: String, location: MemoryLocation?)
+}
+
+interface Memory {
+    var arg: Any?
+
+    fun getHeapValue(location: Int): Any?
+    fun setHeapValue(location: Int, obj: Any?)
+
+    fun getStackValue(location: Int): Any
+    fun push(any: Any): Any
+    fun pop(): Any
+
+    fun malloc(): Int
+}
+
+interface Environment : SymbolTable, Memory {
+    fun setVar(name: String, obj: Any) {
+        val index = malloc()
+        setHeapValue(index, obj)
+        setLocation(name, MemoryLocation.HeapPointer(index))
+    }
+}
+
+class GlobalEnvironment(private val container: SymbolTable? = null) : Environment {
+    val vars = HashMap<String, MemoryLocation?>()
+    override fun getLocation(name: String) = vars[name] ?: container?.getLocation(name)
+    override fun setLocation(name: String, location: MemoryLocation?) = vars.set(name, location)
+
+    override var arg: Any? = null
+
     val stack = Stack<Any>()
-    private val heap = ArrayList<Any?>()
+    override fun getStackValue(location: Int) = stack[stack.size - 1 - location]!!
+    override fun push(any: Any) = stack.push(any)!!
+    override fun pop() = stack.pop()!!
+
+    val heap = ArrayList<Any?>()
     private fun expand(i: Int) {
         while (heap.size <= i)
             heap.add(null)
     }
 
-    operator fun get(location: Int): Any? = heap[location]
-    operator fun set(location: Int, obj: Any) {
+    override fun getHeapValue(location: Int): Any? = heap[location]
+    override fun setHeapValue(location: Int, obj: Any?) {
         expand(location)
         heap[location] = obj
     }
 
-    tailrec fun malloc(index: Int = 0): Int {
+    override fun malloc() = malloc(0)
+    tailrec fun malloc(index: Int): Int {
         expand(index)
         return if (heap[index] == null) index else malloc(index + 1)
-    }
-}
-
-sealed class MemoryLocation : (VirtualMemory) -> Any {
-    class Value(val value: Any) : MemoryLocation() {
-        override fun invoke(virtualMemory: VirtualMemory): Any = value
-        override fun toString() = "Value($value)"
-    }
-
-    class HeapPointer(val index: Int) : MemoryLocation() {
-        override fun invoke(virtualMemory: VirtualMemory) = virtualMemory[index]!!
-        override fun toString() = "HeapPointer($index)"
-    }
-
-    class StackPointer(val index: Int) : MemoryLocation() {
-        override fun invoke(virtualMemory: VirtualMemory) = virtualMemory.stack[index]!!
-        override fun toString() = "StackPointer($index)"
-    }
-}
-
-class SymbolTable {
-    var stackDepth = 0
-    private val vars = HashMap<String, MemoryLocation?>()
-    operator fun get(name: String) = vars[name]
-    operator fun set(name: String, type: MemoryLocation?) = vars.set(name, type)
-}
-
-data class Environment(val virtualMemory: VirtualMemory, val symbolTable: SymbolTable) {
-    operator fun get(name: String) = symbolTable[name]?.invoke(virtualMemory)
-    operator fun set(name: String, obj: Any) {
-        val index = virtualMemory.malloc()
-        virtualMemory[index] = obj
-        symbolTable[name] = MemoryLocation.HeapPointer(index)
     }
 }

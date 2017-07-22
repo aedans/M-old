@@ -50,8 +50,7 @@ fun Iterator<Token>.noWhitespaceOrComments() = object : Iterator<Token> {
 
 val TOKENIZER_INDEX by GlobalMemoryRegistry
 @Suppress("UNCHECKED_CAST")
-fun VirtualMemory.getTokenizers() = this[TOKENIZER_INDEX] as List<Tokenizer>
-fun Environment.getTokenizers() = virtualMemory.getTokenizers()
+fun Environment.getTokenizers() = getHeapValue(TOKENIZER_INDEX) as List<Tokenizer>
 
 fun LookaheadIterator<Char>.tokenize(environment: Environment) = collect { nextToken(environment) }
 
@@ -104,10 +103,10 @@ class IdentifierToken(name: String) : Token(name)
 val IDENTIFIER_IS_HEAD_INDEX by GlobalMemoryRegistry
 val IDENTIFIER_IS_TAIL_INDEX by GlobalMemoryRegistry
 @Suppress("UNCHECKED_CAST")
-val identifierTokenizer: Tokenizer = mFunction { (memory, _), str ->
-    val isHead = memory[IDENTIFIER_IS_HEAD_INDEX] as (Char) -> Boolean
+val identifierTokenizer: Tokenizer = mFunction { env, str ->
+    val isHead = env.getHeapValue(IDENTIFIER_IS_HEAD_INDEX) as (Char) -> Boolean
     str.takeIf { isHead(str[0]) }?.let {
-        val isTail = memory[IDENTIFIER_IS_TAIL_INDEX] as (Char) -> Boolean
+        val isTail = env.getHeapValue(IDENTIFIER_IS_TAIL_INDEX) as (Char) -> Boolean
         val chars = str.takeWhile { isHead(it) || isTail(it) }
         str.drop(chars.size)
         IdentifierToken(String(chars.toCharArray()))

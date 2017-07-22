@@ -1,7 +1,5 @@
 package m
 
-import java.util.*
-
 /**
  * Created by Aedan Smith.
  */
@@ -10,40 +8,43 @@ typealias Evaluator = (Environment) -> (IRExpression) -> Any?
 
 val EVALUATOR_INDEX by GlobalMemoryRegistry
 @Suppress("UNCHECKED_CAST")
-fun VirtualMemory.getEvaluators() = this[EVALUATOR_INDEX] as List<Evaluator>
-fun Environment.getEvaluators() = virtualMemory.getEvaluators()
+fun Environment.getEvaluators() = getHeapValue(EVALUATOR_INDEX) as List<Evaluator>
 
 fun Iterator<IRExpression>.evaluate(environment: Environment) = forEach { it.evaluate(environment) }
-fun IRExpression.evaluate(
-        environment: Environment,
-        evaluators: List<Evaluator> = environment.getEvaluators()
-): Any = evaluators.firstNonNull { it(environment)(this) }?.evaluate(environment, evaluators) ?: this
-
-val identifierEvaluator: Evaluator = mFunction { (virtualMemory, _), expression ->
-    expression.takeIfInstance<IdentifierIRExpression>()?.memoryLocation?.invoke(virtualMemory)
+@Suppress("NOTHING_TO_INLINE")
+inline fun IRExpression.evaluate(environment: Environment): Any {
+    var value = this
+    while (true) {
+        value = environment.getEvaluators().firstNonNull { it(environment)(value) } ?: return value
+    }
 }
 
-val defEvaluator: Evaluator = mFunction { (virtualMemory, symbolTable), expression ->
+val identifierEvaluator: Evaluator = mFunction { env, expression ->
+    expression.takeIfInstance<IdentifierIRExpression>()?.memoryLocation?.invoke(env)
+}
+
+val defEvaluator: Evaluator = mFunction { env, expression ->
     expression.takeIfInstance<DefIRExpression>()?.let {
-        val index = (symbolTable[it.name] as MemoryLocation.HeapPointer).index
-        virtualMemory[index] = it.expression
+        val index = (env.getLocation(it.name) as MemoryLocation.HeapPointer).index
+        env.setHeapValue(index, it.expression)
         index
     }
 }
 
 val lambdaEvaluator: Evaluator = mFunction { env, expression ->
     expression.takeIfInstance<LambdaIRExpression>()?.let {
-        val closure = env.virtualMemory.stack.clone() as Vector<*>;
-        { arg: Any ->
-            closure.forEach { env.virtualMemory.stack.push(it) }
-            env.virtualMemory.stack.push(arg)
-            it.expressions.forEach { it.evaluate(env) }
-            val value = it.value.evaluate(env)
-            env.virtualMemory.stack.pop()
-            closure.forEach { env.virtualMemory.stack.pop() }
-            value
-        }
+        lambda(env, it.closures.map { it(env) }, it.value, it.expressions)
     }
+}
+
+fun lambda(env: Environment, closures: List<Any>, value: IRExpression, expressions: List<IRExpression>) = { arg: Any ->
+    closures.forEach { env.push(it) }
+    env.push(arg)
+    expressions.forEach { it.evaluate(env) }
+    val rValue = value.evaluate(env)
+    env.pop()
+    closures.forEach { env.pop() }
+    rValue
 }
 
 val ifEvaluator: Evaluator = mFunction { env, expression ->

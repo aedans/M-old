@@ -9,8 +9,7 @@ typealias IRGenerator = (Environment) -> (Expression) -> IRExpression?
 
 val IR_GENERATOR_INDEX by GlobalMemoryRegistry
 @Suppress("UNCHECKED_CAST")
-fun VirtualMemory.getIRGenerators() = this[IR_GENERATOR_INDEX] as List<IRGenerator>
-fun Environment.getIRGenerators() = virtualMemory.getIRGenerators()
+fun Environment.getIRGenerators() = this.getHeapValue(m.IR_GENERATOR_INDEX) as List<IRGenerator>
 
 fun LookaheadIterator<Expression>.generateIR(
         environment: Environment
@@ -31,13 +30,13 @@ val stringLiteralIRGenerator: IRGenerator = expressionIRGenerator<StringLiteralE
 val numberLiteralIRGenerator: IRGenerator = expressionIRGenerator<NumberLiteralExpression>()
 
 data class IdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) {
-    override fun toString() = "$name :: $memoryLocation"
+    override fun toString() = "$name : $memoryLocation"
 }
 
 val identifierIRGenerator: IRGenerator = mFunction { env, expression ->
     expression.takeIfInstance<IdentifierExpression>()?.let {
-        val variableType = env.symbolTable[it.name] ?: throw Exception("Could not find symbol ${it.name}")
-        IdentifierIRExpression(it.name, variableType)
+        val location = env.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
+        IdentifierIRExpression(it.name, location)
     }
 }
 
@@ -55,33 +54,52 @@ data class DefIRExpression(val name: String, val expression: IRExpression) {
 
 val defIRGenerator: IRGenerator = uniqueSExpression<DefExpression> { env, expression ->
     val name = (expression[1] as IdentifierExpression).name
-    env.symbolTable[name] = MemoryLocation.HeapPointer(env.virtualMemory.malloc())
+    env.setLocation(name, MemoryLocation.HeapPointer(env.malloc()))
     @Suppress("NAME_SHADOWING")
     val expression = (expression[2] as Expression).toIRExpression(env)
     DefIRExpression(name, expression)
 }
 
 data class LambdaIRExpression(
+        val closures: List<MemoryLocation>,
         val expressions: List<IRExpression>,
         val value: IRExpression
 ) {
-    override fun toString() = "(lambda () " +
+    override fun toString() = "(lambda $closures " +
             expressions.joinToString(separator = " ") + (if (expressions.isEmpty()) "" else " ") +
             "$value)"
 }
 
-val lambdaIRGenerator: IRGenerator = uniqueSExpression<LambdaExpression> { env, sExpression ->
+class ClosedEnvironment(val environment: Environment) : Environment, Memory by environment {
+    val vars = mutableMapOf<String, MemoryLocation.StackPointer>()
+    val closures = mutableListOf<Pair<String, MemoryLocation>>()
+
+    override fun getLocation(name: String): MemoryLocation? {
+        return vars[name] ?: environment.getLocation(name)?.let {
+            if (it is MemoryLocation.HeapPointer) it else {
+                closures.add(name to it)
+                val ptr = MemoryLocation.StackPointer(closures.size)
+                vars.put(name, ptr)
+                ptr
+            }
+        }
+    }
+
+    override fun setLocation(name: String, location: MemoryLocation?) {
+        vars.put(name, location as MemoryLocation.StackPointer)
+    }
+}
+
+val lambdaIRGenerator: IRGenerator = uniqueSExpression<LambdaExpression> { environment, sExpression ->
     val argNames = sExpression[1] as SExpression
     val argName = (argNames[0] as IdentifierExpression).name
-    val temp = env.symbolTable[argName]
-    env.symbolTable[argName] = MemoryLocation.StackPointer(env.symbolTable.stackDepth++)
+    val env = ClosedEnvironment(environment)
+    env.setLocation(argName, MemoryLocation.StackPointer(0))
     val expressions = when (argNames.size) {
         1 -> sExpression.drop(2).map { it!!.toIRExpression(env) }
         else -> listOf((listOf(LambdaExpression, argNames.drop(1)) + sExpression.drop(2)).toIRExpression(env))
     }
-    env.symbolTable[argName] = temp
-    env.symbolTable.stackDepth--
-    LambdaIRExpression(expressions.dropLast(1), expressions.last())
+    LambdaIRExpression(env.closures.map { it.second }.reversed(), expressions.dropLast(1), expressions.last())
 }
 
 data class IfIRExpression(val condition: IRExpression, val ifTrue: IRExpression, val ifFalse: IRExpression) {
