@@ -9,7 +9,7 @@ A Minimal Lisp.
 ```
 
 Defines a global variable with name \<identifier\> and value \<expression\>.
-Overrides previously defined variables. 
+Shadows previously defined variables. 
 
 ```
 (lambda (<identifier>+) <expression>+)

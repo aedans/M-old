@@ -112,6 +112,17 @@ val helloWorld8 by TestType.SuccessTest("Hello, world!") src """
 (print (if #t "Hello, world!"))
 """
 
+val helloWorld9 by TestType.SuccessTest("Hello, world!") src """
+(def x "Hello")
+(print x)
+(def x ", ")
+(print x)
+(def x "world")
+(print x)
+(def x "!")
+(print x)
+"""
+
 val numberTokenizer by TestType.SuccessTest("""
 class kotlin.Byte
 class kotlin.Short

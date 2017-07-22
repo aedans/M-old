@@ -17,5 +17,5 @@ fun LookaheadIterator<Char>.interpret(environment: Environment) {
             .parse(environment)
             .lookaheadIterator()
             .generateIR(environment)
-            .evaluate(environment)
+            .forEach { it.eval(environment) }
 }

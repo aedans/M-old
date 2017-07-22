@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings("unchecked")
 public final class Intrinsics {
     @NotNull
-    public static Function1<Object, Object> toFunction(Object object) {
-        return (Function1<Object, Object>) object;
+    public static Object evaluate(InvokeIRExpression expression, Environment env) {
+        return (((Function1<Object, Object>) expression.expression.eval(env))).invoke(expression.arg.eval(env));
     }
 }

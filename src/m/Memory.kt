@@ -1,6 +1,7 @@
 package m
 
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
@@ -50,8 +51,6 @@ interface SymbolTable {
 }
 
 interface Memory {
-    var arg: Any?
-
     fun getHeapValue(location: Int): Any?
     fun setHeapValue(location: Int, obj: Any?)
 
@@ -75,12 +74,10 @@ class GlobalEnvironment(private val container: SymbolTable? = null) : Environmen
     override fun getLocation(name: String) = vars[name] ?: container?.getLocation(name)
     override fun setLocation(name: String, location: MemoryLocation?) = vars.set(name, location)
 
-    override var arg: Any? = null
-
-    val stack = Stack<Any>()
-    override fun getStackValue(location: Int) = stack[stack.size - 1 - location]!!
-    override fun push(any: Any) = stack.push(any)!!
-    override fun pop() = stack.pop()!!
+    val stack = ArrayList<Any>()
+    override fun getStackValue(location: Int) = stack[stack.size - 1 - location]
+    override fun push(any: Any) = stack.add(any)
+    override fun pop() = stack.removeAt(stack.size - 1)
 
     val heap = ArrayList<Any?>()
     private fun expand(i: Int) {
