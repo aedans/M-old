@@ -23,7 +23,7 @@ fun IdentifierIRExpression.evaluate(environment: Environment) = memoryLocation(e
 
 fun DefIRExpression.evaluate(environment: Environment): Int {
     val index = (environment.getLocation(name) as MemoryLocation.HeapPointer).index
-    environment.setHeapValue(index, expression)
+    environment.setHeapValue(index, expression.evaluate(environment))
     return index
 }
 
@@ -56,4 +56,4 @@ else
     ifFalse.evaluate(env)
 
 @Suppress("UNCHECKED_CAST")
-fun InvokeIRExpression.evaluate(env: Environment) = (expression.evaluate(env) as (Any) -> Any)(arg.evaluate(env))
+fun InvokeIRExpression.evaluate(env: Environment) = Intrinsics.toFunction(expression.evaluate(env))(arg.evaluate(env))!!
