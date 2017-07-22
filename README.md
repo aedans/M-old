@@ -23,7 +23,8 @@ Lambdas are curried; (lambda (x y) (+ x y)) is expanded to (lambda (x) (lambda (
 Closures are supported.
 
 ```
-(if <condition> <then> <else>)
+(if <condition> <then> <else>?)
 ```
 
 If \<condition\> is true, evaluates \<then\>, otherwise evaluates \<else\>.
+If there is no \<else\>, and \<condition\> is false, evaluates to Unit instead.

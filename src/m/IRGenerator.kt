@@ -109,7 +109,7 @@ data class IfIRExpression(val condition: IRExpression, val ifTrue: IRExpression,
 val ifIRGenerator: IRGenerator = uniqueSExpression<IfExpression> { env, sExpression ->
     val condition = (sExpression[1] as Expression).toIRExpression(env)
     val ifTrue = (sExpression[2] as Expression).toIRExpression(env)
-    val ifFalse = (sExpression[3] as Expression).toIRExpression(env)
+    val ifFalse = if (sExpression.size > 3) (sExpression[3] as Expression).toIRExpression(env) else Unit
     IfIRExpression(condition, ifTrue, ifFalse)
 }
 

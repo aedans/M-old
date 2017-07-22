@@ -34,7 +34,13 @@ fun LambdaIRExpression.evaluate(environment: Environment) = lambda(
         expressions
 )
 
-fun lambda(env: Environment, closures: List<Any>, value: IRExpression, expressions: List<IRExpression>) = { arg: Any ->
+private inline fun <T> List<T>.map(func: (T) -> Any): Array<Any> {
+    var index = 0
+    val array = Array(size) { func(this[index++]) }
+    return array
+}
+
+fun lambda(env: Environment, closures: Array<Any>, value: IRExpression, expressions: List<IRExpression>) = { arg: Any ->
     closures.forEach { env.push(it) }
     env.push(arg)
     expressions.forEach { it.evaluate(env) }
