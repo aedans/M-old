@@ -49,14 +49,6 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             sExpressionIRGenerator
     ))
 
-    env.setHeapValue(EVALUATOR_INDEX, mutableListOf(
-            identifierEvaluator,
-            defEvaluator,
-            lambdaEvaluator,
-            ifEvaluator,
-            invokeEvaluator
-    ))
-
     env.setHeapValue(IDENTIFIER_IS_HEAD_INDEX, mFunction<Char, Boolean> {
         it in 'a'..'z' || it in 'A'..'Z' || it in "+-*/=<>!"
     })
