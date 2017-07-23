@@ -55,8 +55,8 @@ interface Memory {
     fun setHeapValue(location: Int, obj: Any?)
 
     fun getStackValue(location: Int): Any
-    fun push(any: Any): Any
-    fun pop(): Any
+    fun push(any: Any)
+    fun pop()
 
     fun malloc(): Int
 }
@@ -76,8 +76,13 @@ class GlobalEnvironment(private val container: SymbolTable? = null) : Environmen
 
     val stack = ArrayList<Any>()
     override fun getStackValue(location: Int) = stack[stack.size - 1 - location]
-    override fun push(any: Any) = stack.add(any)
-    override fun pop() = stack.removeAt(stack.size - 1)
+    override fun push(any: Any){
+        stack.add(any)
+    }
+
+    override fun pop() {
+        stack.removeAt(stack.size - 1)
+    }
 
     val heap = ArrayList<Any?>()
     private fun expand(i: Int) {

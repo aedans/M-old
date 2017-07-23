@@ -123,9 +123,9 @@ val helloWorld9 by TestType.SuccessTest("Hello, world!") src """
 (print x)
 """
 
-val quote by TestType.SuccessTest("[1, 2, 3]\n[1, 2, 3]") src """
-(println (quote (1 2 3)))
-(println '(1 2 3))
+val quote by TestType.SuccessTest("(1 . (2 . (3 . nil)))(1 . (2 . (3 . nil)))") src """
+(print (quote (1 2 3)))
+(print '(1 2 3))
 """
 
 val numberTokenizer by TestType.SuccessTest("""

@@ -31,6 +31,12 @@ inline fun <reified T : Expression> literalIRGenerator(): IRGenerator = mFunctio
     expression.takeIfInstance<T>()?.let { LiteralIRExpression(it) }
 }
 
+inline fun <reified T : Expression> literalIRGenerator(
+        literalIRExpression: LiteralIRExpression
+): IRGenerator = mFunction { _, expression ->
+    expression.takeIfInstance<T>()?.let { literalIRExpression }
+}
+
 inline fun <reified T : Expression> typedIRGenerator(
         crossinline func: (Environment, T) -> IRExpression
 ): IRGenerator = mFunction { env, expression ->
@@ -41,14 +47,13 @@ val stringLiteralIRGenerator: IRGenerator = literalIRGenerator<StringLiteralExpr
 val numberLiteralIRGenerator: IRGenerator = literalIRGenerator<NumberLiteralExpression>()
 
 object TrueIRExpression : LiteralIRExpression(true)
-val trueIRGenerator: IRGenerator = mFunction { _, expression ->
-    expression.takeIfInstance<TrueExpression>()?.let { TrueIRExpression }
-}
+val trueIRGenerator: IRGenerator = literalIRGenerator<TrueExpression>(TrueIRExpression)
 
 object FalseIRExpression : LiteralIRExpression(false)
-val falseIRGenerator: IRGenerator = mFunction { _, expression ->
-    expression.takeIfInstance<FalseExpression>()?.let { FalseIRExpression }
-}
+val falseIRGenerator: IRGenerator = literalIRGenerator<FalseExpression>(FalseIRExpression)
+
+object NilIRExpression : LiteralIRExpression(Nil)
+val nilIRGenerator: IRGenerator = literalIRGenerator<NilExpression>(NilIRExpression)
 
 data class IdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) : IRExpression {
     override fun eval(environment: Environment) = evaluate(environment)
@@ -148,7 +153,7 @@ val ifIRGenerator: IRGenerator = typedIRGenerator<IfExpression> { env, (conditio
 }
 
 val quoteIRGenerator: IRGenerator = typedIRGenerator<QuoteExpression> { _, (value) ->
-    LiteralIRExpression(value)
+    LiteralIRExpression(value.toConsList())
 }
 
 data class InvokeIRExpression(@JvmField val expression: IRExpression, @JvmField val arg: IRExpression) : IRExpression {

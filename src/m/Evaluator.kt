@@ -14,12 +14,12 @@ fun DefIRExpression.evaluate(environment: Environment): Int {
 
 fun LambdaIRExpression.evaluate(environment: Environment) = lambda(
         environment,
-        closures.map { it(environment) },
+        closures.mapToArray { it(environment) },
         value,
         expressions
 )
 
-private inline fun <T> List<T>.map(func: (T) -> Any): Array<Any> {
+private inline fun <T> List<T>.mapToArray(func: (T) -> Any): Array<Any> {
     var index = 0
     val array = Array(size) { func(this[index++]) }
     return array

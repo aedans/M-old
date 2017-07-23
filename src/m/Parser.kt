@@ -56,6 +56,9 @@ val trueParser = atomParser(TrueToken, TrueExpression)
 object FalseExpression : TokenExpression(FalseToken)
 val falseParser = atomParser(FalseToken, FalseExpression)
 
+object NilExpression : TokenExpression(NilToken)
+val nilParser = atomParser(NilToken, NilExpression)
+
 val identifierParser: Parser = mFunction { _, tokens ->
     (tokens[0] as? IdentifierToken)?.let {
         IdentifierExpression(tokens[0].text.toString()).also { tokens.drop(1) }
