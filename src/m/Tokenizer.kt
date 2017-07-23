@@ -54,11 +54,10 @@ fun Environment.getTokenizers() = getHeapValue(TOKENIZER_INDEX) as List<Tokenize
 
 fun LookaheadIterator<Char>.tokenize(environment: Environment) = collect { nextToken(environment) }
 
-private fun LookaheadIterator<Char>.nextToken(
-        environment: Environment,
-        tokenizers: List<Tokenizer> = environment.getTokenizers()
-) = tokenizers.firstNonNull { it(environment)(this) } ?:
-        throw Exception("Unexpected character ${this[0]} (${this[0].toInt()})")
+private fun LookaheadIterator<Char>.nextToken(environment: Environment) = environment
+        .getTokenizers()
+        .firstNonNull { it(environment)(this) }
+        ?: throw Exception("Unexpected character ${this[0]} (${this[0].toInt()})")
 
 fun charTokenizer(char: Char, token: Token): Tokenizer = mFunction { _, str ->
     str[0].takeIf { it == char }
@@ -71,12 +70,6 @@ val oParenTokenizer = charTokenizer('(', OParenToken)
 
 object CParenToken : Token(")")
 val cParenTokenizer = charTokenizer(')', CParenToken)
-
-val whitespaceTokenizer: Tokenizer = mFunction { _, str ->
-    str[0].takeIf(Char::isWhitespace)
-            ?.let { WhitespaceOrCommentToken }
-            ?.also { str.drop(1) }
-}
 
 fun keywordTokenizer(string: String, token: Token): Tokenizer = mFunction { _, str ->
     str.takeIf { it startsWith string }
@@ -99,18 +92,10 @@ val trueTokenizer = keywordTokenizer("#t", TrueToken)
 object FalseToken : Token("#f")
 val falseTokenizer = keywordTokenizer("#f", FalseToken)
 
-class IdentifierToken(name: String) : Token(name)
-val IDENTIFIER_IS_HEAD_INDEX by GlobalMemoryRegistry
-val IDENTIFIER_IS_TAIL_INDEX by GlobalMemoryRegistry
-@Suppress("UNCHECKED_CAST")
-val identifierTokenizer: Tokenizer = mFunction { env, str ->
-    val isHead = env.getHeapValue(IDENTIFIER_IS_HEAD_INDEX) as (Char) -> Boolean
-    str.takeIf { isHead(str[0]) }?.let {
-        val isTail = env.getHeapValue(IDENTIFIER_IS_TAIL_INDEX) as (Char) -> Boolean
-        val chars = str.takeWhile { isHead(it) || isTail(it) }
-        str.drop(chars.size)
-        IdentifierToken(String(chars.toCharArray()))
-    }
+val whitespaceTokenizer: Tokenizer = mFunction { _, str ->
+    str[0].takeIf(Char::isWhitespace)
+            ?.let { WhitespaceOrCommentToken }
+            ?.also { str.drop(1) }
 }
 
 class StringLiteralToken(string: String) : Token(string)
@@ -155,6 +140,20 @@ val numberLiteralTokenizer: Tokenizer = mFunction { _, str ->
         }
         if (drop) str.drop(1)
         NumberLiteralToken(number, type)
+    }
+}
+
+class IdentifierToken(name: String) : Token(name)
+val IDENTIFIER_IS_HEAD_INDEX by GlobalMemoryRegistry
+val IDENTIFIER_IS_TAIL_INDEX by GlobalMemoryRegistry
+@Suppress("UNCHECKED_CAST")
+val identifierTokenizer: Tokenizer = mFunction { env, str ->
+    val isHead = env.getHeapValue(IDENTIFIER_IS_HEAD_INDEX) as (Char) -> Boolean
+    str.takeIf { isHead(str[0]) }?.let {
+        val isTail = env.getHeapValue(IDENTIFIER_IS_TAIL_INDEX) as (Char) -> Boolean
+        val chars = str.takeWhile { isHead(it) || isTail(it) }
+        str.drop(chars.size)
+        IdentifierToken(String(chars.toCharArray()))
     }
 }
 

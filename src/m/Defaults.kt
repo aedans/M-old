@@ -14,38 +14,38 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
     env.setHeapValue(TOKENIZER_INDEX, mutableListOf(
             oParenTokenizer,
             cParenTokenizer,
-            whitespaceTokenizer,
-            stringLiteralTokenizer,
-            numberLiteralTokenizer,
             defTokenizer,
             lambdaTokenizer,
             ifTokenizer,
             trueTokenizer,
             falseTokenizer,
+            whitespaceTokenizer,
+            stringLiteralTokenizer,
+            numberLiteralTokenizer,
             identifierTokenizer
     ))
 
     env.setHeapValue(PARSER_INDEX, mutableListOf(
-            sExpressionParser,
+            trueParser,
+            falseParser,
+            identifierParser,
             stringLiteralParser,
             numberLiteralParser,
             defParser,
             lambdaParser,
             ifParser,
-            trueParser,
-            falseParser,
-            identifierParser
+            sExpressionParser
     ))
 
     env.setHeapValue(IR_GENERATOR_INDEX, mutableListOf(
             stringLiteralIRGenerator,
             numberLiteralIRGenerator,
+            trueIRGenerator,
+            falseIRGenerator,
             identifierIRGenerator,
             defIRGenerator,
             lambdaIRGenerator,
             ifIRGenerator,
-            trueIRGenerator,
-            falseIRGenerator,
             sExpressionIRGenerator
     ))
 
