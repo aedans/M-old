@@ -12,41 +12,59 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
     val env = GlobalEnvironment()
 
     env.setHeapValue(TOKENIZER_INDEX, mutableListOf(
+            // Chars
             oParenTokenizer,
             cParenTokenizer,
+            apostropheTokenizer,
+            // Keywords
+            trueTokenizer,
+            falseTokenizer,
             defTokenizer,
             lambdaTokenizer,
             ifTokenizer,
-            trueTokenizer,
-            falseTokenizer,
+            quoteTokenizer,
+            // Whitespace
             whitespaceTokenizer,
+            // Literals
             stringLiteralTokenizer,
             numberLiteralTokenizer,
+            // Identifiers
             identifierTokenizer
     ))
 
     env.setHeapValue(PARSER_INDEX, mutableListOf(
+            // Tokens
             trueParser,
             falseParser,
             identifierParser,
             stringLiteralParser,
             numberLiteralParser,
+            // Sugar
+            apostropheParser,
+            // Fundamentals
             defParser,
             lambdaParser,
             ifParser,
+            quoteParser,
+            // SExpressions
             sExpressionParser
     ))
 
     env.setHeapValue(IR_GENERATOR_INDEX, mutableListOf(
+            // Literals
             stringLiteralIRGenerator,
             numberLiteralIRGenerator,
             trueIRGenerator,
             falseIRGenerator,
+            // Identifier
             identifierIRGenerator,
+            // Fundamentals
             defIRGenerator,
             lambdaIRGenerator,
             ifIRGenerator,
-            sExpressionIRGenerator
+            quoteIRGenerator,
+            // Invoke
+            invokeIRGenerator
     ))
 
     env.setHeapValue(IDENTIFIER_IS_HEAD_INDEX, mFunction<Char, Boolean> {

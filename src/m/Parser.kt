@@ -86,6 +86,15 @@ val numberLiteralParser: Parser = mFunction { _, tokens ->
     }
 }
 
+val apostropheParser: Parser = mFunction { env, tokens ->
+    tokens[0].takeIf { it === ApostropheToken }?.let {
+        tokens.drop(1)
+        val value = tokens.nextExpression(env) as SExpression
+        @Suppress("UNCHECKED_CAST")
+        QuoteExpression(value as List<Any>)
+    }
+}
+
 data class DefExpression(val name: String, val expression: Expression)
 val defParser = uniqueSExpressionParser(DefToken) { env, tokens ->
     val name = (tokens.nextExpression(env) as IdentifierExpression).name
@@ -112,7 +121,14 @@ val ifParser = uniqueSExpressionParser(IfToken) { env, tokens ->
     IfExpression(condition, ifTrue, ifFalse)
 }
 
-object CParenExpression : TokenExpression(CParenToken)
+data class QuoteExpression(val value: List<Expression>)
+val quoteParser = uniqueSExpressionParser(QuoteToken) { env, tokens ->
+    val value = tokens.nextExpression(env) as SExpression
+    @Suppress("UNCHECKED_CAST")
+    QuoteExpression(value as List<Any>)
+}
+
+private object CParenExpression : TokenExpression(CParenToken)
 val sExpressionParser: Parser = mFunction { env, tokens ->
     tokens.takeIf { it[0] === OParenToken }?.let {
         it

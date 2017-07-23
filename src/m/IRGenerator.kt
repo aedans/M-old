@@ -147,12 +147,16 @@ val ifIRGenerator: IRGenerator = typedIRGenerator<IfExpression> { env, (conditio
     )
 }
 
+val quoteIRGenerator: IRGenerator = typedIRGenerator<QuoteExpression> { _, (value) ->
+    LiteralIRExpression(value)
+}
+
 data class InvokeIRExpression(@JvmField val expression: IRExpression, @JvmField val arg: IRExpression) : IRExpression {
     override fun eval(environment: Environment) = evaluate(environment)
     override fun toString() = "($expression $arg)"
 }
 
-val sExpressionIRGenerator: IRGenerator = mFunction { env, expression ->
+val invokeIRGenerator: IRGenerator = mFunction { env, expression ->
     expression.takeIfInstance<SExpression>()?.let {
         @Suppress("NAME_SHADOWING")
         val expression = when (it.size) {

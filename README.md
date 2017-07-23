@@ -28,3 +28,12 @@ Closures are supported.
 
 If \<condition\> is true, evaluates \<then\>, otherwise evaluates \<else\>.
 If there is no \<else\>, and \<condition\> is false, evaluates to Unit instead.
+
+```
+(quote <list>)
+'<list>
+```
+
+Evaluates to \<list\>.
+
+'(1 2 3) is syntactic sugar for (quote (1 2 3)).
