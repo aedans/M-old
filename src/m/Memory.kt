@@ -11,29 +11,13 @@ import kotlin.reflect.KProperty
 
 object GlobalMemoryRegistry {
     private var index = 0
-    private val registeredNames = mutableListOf<String>()
-
-    fun addAllToTable(symbolTable: SymbolTable) = registeredNames.forEachIndexed { i, name ->
-        symbolTable.setLocation(name, MemoryLocation.Value(i))
-    }
-
-    operator fun provideDelegate(nothing: Nothing?, property: KProperty<*>) = object : ReadOnlyProperty<Nothing?, Int> {
-        init {
-            registeredNames.add(property.name)
-        }
-
+    operator fun provideDelegate(nothing: Nothing?, unused: KProperty<*>) = object : ReadOnlyProperty<Nothing?, Int> {
         val thisIndex = index++
-        @Suppress("NAME_SHADOWING")
         override operator fun getValue(thisRef: Nothing?, property: KProperty<*>) = thisIndex
     }
 }
 
 sealed class MemoryLocation : (Memory) -> Any {
-    class Value(val value: Any) : MemoryLocation() {
-        override fun invoke(memory: Memory): Any = value
-        override fun toString() = "v$value"
-    }
-
     class HeapPointer(val index: Int) : MemoryLocation() {
         override fun invoke(memory: Memory) = memory.getHeapValue(index)!!
         override fun toString() = "*h$index"

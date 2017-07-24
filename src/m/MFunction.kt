@@ -4,7 +4,7 @@ package m
  * Created by Aedan Smith.
  */
 
-inline fun <reified I, reified O> mFunction(noinline mFunction: (I) -> O) = object : (I) -> O {
+inline fun <reified I, reified O> mFunction(crossinline mFunction: (I) -> O) = object : (I) -> O {
     override fun invoke(p1: I) = mFunction(p1)
     override fun toString() = "(${I::class.qualifiedName}) -> ${O::class.qualifiedName}"
 }

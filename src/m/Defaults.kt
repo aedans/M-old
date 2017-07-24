@@ -80,7 +80,5 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
     env.setVar("println", mFunction<Any, Unit> { PrintStream(out).println(it) })
     env.setVar("class-of", mFunction<Any, KClass<*>> { it::class })
 
-    GlobalMemoryRegistry.addAllToTable(env)
-
     return env
 }

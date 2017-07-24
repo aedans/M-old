@@ -1,7 +1,6 @@
 package m
 
 import java.io.InputStream
-import java.util.*
 
 /**
  * Created by Aedan Smith.
@@ -56,7 +55,6 @@ class CharSequenceLookaheadIterator(var charSequence: CharSequence) : LookaheadI
 }
 
 fun CharSequence.lookaheadIterator() = CharSequenceLookaheadIterator(this)
-fun Scanner.lookaheadIterator() = iterator().lookaheadIterator()
 fun InputStream.lookaheadIterator() = iterator().lookaheadIterator()
 
 operator fun InputStream.iterator() = object : Iterator<Char> {
