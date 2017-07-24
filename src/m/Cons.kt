@@ -10,9 +10,9 @@ object Nil {
 
 class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) {
     override fun toString() = toString(true)
-    fun toString(b: Boolean): String = when (cdr) {
+    fun toString(b: Boolean): String = if (b) "(${this.toString(false)})" else when (cdr) {
         Nil -> "$car"
-        is ConsCell -> if (b) "(${this.toString(false)})" else "$car ${cdr.toString(false)}"
+        is ConsCell -> "$car ${cdr.toString(false)}"
         else -> "($car . $cdr)"
     }
 }

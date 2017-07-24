@@ -1,7 +1,5 @@
 package m
 
-import java.io.InputStream
-
 /**
  * Created by Aedan Smith.
  */
@@ -16,7 +14,7 @@ object WhitespaceOrCommentToken : Token(" ")
 
 typealias Tokenizer = (Environment) -> (LookaheadIterator<Char>) -> Token?
 
-fun Iterator<Token>.noWhitespaceOrComments() = asSequence().filter { it !== WhitespaceOrCommentToken }.iterator()
+private fun Iterator<Token>.noWhitespaceOrComments() = asSequence().filter { it !== WhitespaceOrCommentToken }.iterator()
 
 val TOKENIZER_INDEX by GlobalMemoryRegistry
 @Suppress("UNCHECKED_CAST")
@@ -29,7 +27,7 @@ fun LookaheadIterator<Char>.tokenize(environment: Environment) = collect { nextT
 private fun LookaheadIterator<Char>.nextToken(environment: Environment) = environment
         .getTokenizers()
         .firstNonNull { it(environment)(this) }
-        ?: throw Exception("Unexpected character ${this[0]} (${this[0].toInt()})")
+        ?: throw Exception("Unexpected character ${this[0]}")
 
 private fun charTokenizer(char: Char, token: Token): Tokenizer = mFunction { _, str ->
     str[0].takeIf { it == char }
@@ -110,6 +108,3 @@ val identifierTokenizer: Tokenizer = mFunction { env, str ->
         IdentifierToken(String(chars.toCharArray()))
     }
 }
-
-private infix fun Iterable<Char>.startsWith(charSequence: CharSequence) = iterator() startsWith charSequence
-private infix fun Iterator<Char>.startsWith(charSequence: CharSequence) = charSequence.all { next() == it }

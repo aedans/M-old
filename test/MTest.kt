@@ -104,15 +104,15 @@ val helloWorld5 by TestType.SuccessTest("Hello, world!") src """
 """
 
 val helloWorld6 by TestType.SuccessTest("Hello, world!") src """
-(print (if #t "Hello, world!" "error"))
+(print (if true "Hello, world!" "error"))
 """
 
 val helloWorld7 by TestType.SuccessTest("Hello, world!") src """
-(print (if (if #f #t #f) "error" "Hello, world!"))
+(print (if (if false true false) "error" "Hello, world!"))
 """
 
 val helloWorld8 by TestType.SuccessTest("Hello, world!") src """
-(print (if #t "Hello, world!"))
+(print (if true "Hello, world!"))
 """
 
 val helloWorld9 by TestType.SuccessTest("Hello, world!") src """

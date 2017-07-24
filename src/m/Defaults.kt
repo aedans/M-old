@@ -52,15 +52,15 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
     ))
 
     env.setHeapValue(IDENTIFIER_IS_HEAD_INDEX, mFunction<Char, Boolean> {
-        it in 'a'..'z' || it in 'A'..'Z' || it in "+-*/=<>!?#"
+        it in 'a'..'z' || it in 'A'..'Z' || it in "!?+-*/=<>|&"
     })
 
     env.setHeapValue(IDENTIFIER_IS_TAIL_INDEX, mFunction<Char, Boolean> {
         it in '0'..'9' || it == '-' || it == '_' || it == ':'
     })
 
-    env.setVar("#t", true)
-    env.setVar("#f", false)
+    env.setVar("true", true)
+    env.setVar("false", false)
     env.setVar("nil", Nil)
 
     env.setVar("cons", mFunction<Any, Any, ConsCell> { car, cdr -> ConsCell(car, cdr) })
@@ -68,6 +68,9 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
     env.setVar("cdr", mFunction<ConsCell, Any> { it.cdr })
 
     env.setVar("!", mFunction<Boolean, Boolean> { !it })
+    env.setVar("|", mFunction<Boolean, Boolean, Boolean> { x, y -> x || y })
+    env.setVar("&", mFunction<Boolean, Boolean, Boolean> { x, y -> x && y })
+
     env.setVar("=", mFunction<Any, Any, Any> { x, y -> x == y })
     env.setVar("<", mFunction<Int, Int, Boolean> { x, y -> x < y })
     env.setVar(">", mFunction<Int, Int, Boolean> { x, y -> x > y })

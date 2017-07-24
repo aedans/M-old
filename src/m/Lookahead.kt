@@ -43,4 +43,3 @@ fun <T, R> LookaheadIterator<T>.collect(collector: (LookaheadIterator<T>) -> R) 
 }
 
 fun <T> Iterator<T>.lookaheadIterator() = IteratorLookaheadIterator(this)
-fun <T> Iterable<T>.lookaheadIterator() = iterator().lookaheadIterator()

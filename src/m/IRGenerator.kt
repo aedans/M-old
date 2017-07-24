@@ -26,13 +26,13 @@ fun LookaheadIterator<Expression>.generateIR(environment: Environment): Iterator
 fun Expression.toIRExpression(environment: Environment) = environment
         .getIRGenerators()
         .firstNonNull { it(environment)(this) }
-        ?: throw Exception("Unexpected expression ${this} (${this::class})")
+        ?: throw Exception("Unexpected expression ${this}")
 
-inline fun <reified T : Expression> literalIRGenerator(): IRGenerator = mFunction { _, expression ->
+private inline fun <reified T : Expression> literalIRGenerator(): IRGenerator = mFunction { _, expression ->
     expression.takeIfInstance<T>()?.let { LiteralIRExpression(it) }
 }
 
-inline fun uniqueSExpressionIRGenerator(
+private inline fun uniqueSExpressionIRGenerator(
         name: String,
         crossinline func: (Environment, SExpression) -> IRExpression
 ): IRGenerator = mFunction { env, expression ->
@@ -98,7 +98,7 @@ data class LambdaIRExpression(
             "$value)"
 }
 
-class ClosedEnvironment(val environment: Environment) : Environment, Memory by environment {
+class ClosedEnvironment(val environment: Environment) : Environment, DynamicMemory by environment {
     val vars = mutableMapOf<String, MemoryLocation.StackPointer>()
     val closures = mutableListOf<Pair<String, MemoryLocation>>()
 
@@ -125,7 +125,7 @@ val lambdaIRGenerator: IRGenerator = uniqueSExpressionIRGenerator("lambda") { en
     generateLambdaIRExpression(environment, argNames, expressions)
 }
 
-fun generateLambdaIRExpression(
+private fun generateLambdaIRExpression(
         environment: Environment,
         argNames: List<String>,
         expressions: List<Expression>

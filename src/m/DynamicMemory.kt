@@ -17,14 +17,14 @@ object GlobalMemoryRegistry {
     }
 }
 
-sealed class MemoryLocation : (Memory) -> Any {
+sealed class MemoryLocation : (DynamicMemory) -> Any {
     class HeapPointer(val index: Int) : MemoryLocation() {
-        override fun invoke(memory: Memory) = memory.getHeapValue(index)!!
+        override fun invoke(memory: DynamicMemory) = memory.getHeapValue(index)!!
         override fun toString() = "*h$index"
     }
 
     class StackPointer(val index: Int) : MemoryLocation() {
-        override fun invoke(memory: Memory) = memory.getStackValue(index)
+        override fun invoke(memory: DynamicMemory) = memory.getStackValue(index)
         override fun toString() = "*s$index"
     }
 }
@@ -34,7 +34,7 @@ interface SymbolTable {
     fun setLocation(name: String, location: MemoryLocation?)
 }
 
-interface Memory {
+interface DynamicMemory {
     fun getHeapValue(location: Int): Any?
     fun setHeapValue(location: Int, obj: Any?)
 
@@ -45,7 +45,7 @@ interface Memory {
     fun malloc(): Int
 }
 
-interface Environment : SymbolTable, Memory {
+interface Environment : SymbolTable, DynamicMemory {
     fun setVar(name: String, obj: Any) {
         val index = malloc()
         setHeapValue(index, obj)
