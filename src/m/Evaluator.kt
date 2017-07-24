@@ -39,6 +39,3 @@ fun IfIRExpression.evaluate(env: Environment) = if (condition.eval(env) as Boole
     ifTrue.eval(env)
 else
     ifFalse.eval(env)
-
-@Suppress("NOTHING_TO_INLINE")
-inline fun InvokeIRExpression.evaluate(env: Environment) = Intrinsics.evaluate(this, env)

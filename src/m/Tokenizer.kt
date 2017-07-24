@@ -74,38 +74,6 @@ val cParenTokenizer = charTokenizer(')', CParenToken)
 object ApostropheToken : Token("'")
 val apostropheTokenizer = charTokenizer('\'', ApostropheToken)
 
-fun keywordTokenizer(string: String, token: Token): Tokenizer = mFunction { env, str ->
-    str.takeIf { it startsWith string }
-            ?.takeUnless {
-                @Suppress("UNCHECKED_CAST")
-                (env.getHeapValue(IDENTIFIER_IS_HEAD_INDEX) as (Char) -> Boolean)(it[string.length]) ||
-                        (env.getHeapValue(IDENTIFIER_IS_TAIL_INDEX) as (Char) -> Boolean)(it[string.length])
-            }
-            ?.let { token }
-            ?.also { str.drop(string.length) }
-}
-
-object TrueToken : Token("#t")
-val trueTokenizer = keywordTokenizer("#t", TrueToken)
-
-object FalseToken : Token("#f")
-val falseTokenizer = keywordTokenizer("#f", FalseToken)
-
-object NilToken : Token("nil")
-val nilTokenizer = keywordTokenizer("nil", NilToken)
-
-object DefToken : Token("def")
-val defTokenizer = keywordTokenizer("def", DefToken)
-
-object LambdaToken : Token("lambda")
-val lambdaTokenizer = keywordTokenizer("lambda", LambdaToken)
-
-object IfToken : Token("if")
-val ifTokenizer = keywordTokenizer("if", IfToken)
-
-object QuoteToken : Token("quote")
-val quoteTokenizer = keywordTokenizer("quote", QuoteToken)
-
 val whitespaceTokenizer: Tokenizer = mFunction { _, str ->
     str[0].takeIf(Char::isWhitespace)
             ?.let { WhitespaceOrCommentToken }

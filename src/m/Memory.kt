@@ -13,8 +13,8 @@ object GlobalMemoryRegistry {
     private var index = 0
     private val registeredNames = mutableListOf<String>()
 
-    fun addAllToTable(symbolTable: SymbolTable) {
-        registeredNames.forEachIndexed { i, name -> symbolTable.setLocation(name, MemoryLocation.Value(i)) }
+    fun addAllToTable(symbolTable: SymbolTable) = registeredNames.forEachIndexed { i, name ->
+        symbolTable.setLocation(name, MemoryLocation.Value(i))
     }
 
     operator fun provideDelegate(nothing: Nothing?, property: KProperty<*>) = object : ReadOnlyProperty<Nothing?, Int> {

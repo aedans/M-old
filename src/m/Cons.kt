@@ -8,7 +8,7 @@ object Nil {
     override fun toString() = "nil"
 }
 
-class ConsCell(val car: Any, val cdr: Any) {
+class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) {
     override fun toString() = "($car . $cdr)"
 }
 

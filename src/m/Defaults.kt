@@ -16,14 +16,6 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             oParenTokenizer,
             cParenTokenizer,
             apostropheTokenizer,
-            // Keywords
-            trueTokenizer,
-            falseTokenizer,
-            nilTokenizer,
-            defTokenizer,
-            lambdaTokenizer,
-            ifTokenizer,
-            quoteTokenizer,
             // Whitespace
             whitespaceTokenizer,
             // Literals
@@ -35,19 +27,11 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
 
     env.setHeapValue(PARSER_INDEX, mutableListOf(
             // Tokens
-            trueParser,
-            falseParser,
-            nilParser,
             identifierParser,
             stringLiteralParser,
             numberLiteralParser,
             // Sugar
             apostropheParser,
-            // Fundamentals
-            defParser,
-            lambdaParser,
-            ifParser,
-            quoteParser,
             // SExpressions
             sExpressionParser
     ))
@@ -56,9 +40,6 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
             // Literals
             stringLiteralIRGenerator,
             numberLiteralIRGenerator,
-            trueIRGenerator,
-            falseIRGenerator,
-            nilIRGenerator,
             // Identifier
             identifierIRGenerator,
             // Fundamentals
@@ -71,12 +52,16 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
     ))
 
     env.setHeapValue(IDENTIFIER_IS_HEAD_INDEX, mFunction<Char, Boolean> {
-        it in 'a'..'z' || it in 'A'..'Z' || it in "+-*/=<>!?"
+        it in 'a'..'z' || it in 'A'..'Z' || it in "+-*/=<>!?#"
     })
 
     env.setHeapValue(IDENTIFIER_IS_TAIL_INDEX, mFunction<Char, Boolean> {
         it in '0'..'9' || it == '-' || it == '_' || it == ':'
     })
+
+    env.setVar("#t", true)
+    env.setVar("#f", false)
+    env.setVar("nil", Nil)
 
     env.setVar("cons", mFunction<Any, Any, ConsCell> { car, cdr -> ConsCell(car, cdr) })
     env.setVar("car", mFunction<ConsCell, Any> { it.car })

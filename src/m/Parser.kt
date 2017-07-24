@@ -5,18 +5,7 @@ package m
  */
 
 typealias Expression = Any
-typealias SExpression = List<*>
-data class IdentifierExpression(val name: String) {
-    override fun toString() = name
-}
-
-open class TokenExpression(token: Token) {
-    val name = token.text.toString().toUpperCase()
-    override fun equals(other: Any?) = other is TokenExpression && other.name == name
-    override fun hashCode() = name.hashCode()
-    override fun toString() = name
-}
-
+typealias SExpression = List<Any>
 typealias Parser = (Environment) -> (LookaheadIterator<Token>) -> Expression?
 
 val PARSER_INDEX by GlobalMemoryRegistry
@@ -30,38 +19,13 @@ fun LookaheadIterator<Token>.nextExpression(environment: Environment) = environm
         .firstNonNull { it(environment)(this) }
         ?: throw Exception("Unexpected token ${this[0]}")
 
-fun atomParser(token: Token, expression: Expression): Parser = mFunction { _, tokens ->
-    tokens.takeIf { it[0] === token }?.let {
-        it.drop(1)
-        expression
-    }
+class IdentifierExpression(val name: String) {
+    override fun toString() = "$$name"
 }
-
-inline fun uniqueSExpressionParser(
-        token: Token,
-        crossinline func: (Environment, LookaheadIterator<Token>) -> Expression
-): Parser = mFunction { env, tokens ->
-    tokens.takeIf { it[0] === OParenToken && it[1] == token }?.let {
-        tokens.drop(2)
-        val expr = func(env, tokens)
-        tokens.takeIf { it[0] === CParenToken } ?: throw Exception("Missing closing parentheses")
-        tokens.drop(1)
-        expr
-    }
-}
-
-object TrueExpression : TokenExpression(TrueToken)
-val trueParser = atomParser(TrueToken, TrueExpression)
-
-object FalseExpression : TokenExpression(FalseToken)
-val falseParser = atomParser(FalseToken, FalseExpression)
-
-object NilExpression : TokenExpression(NilToken)
-val nilParser = atomParser(NilToken, NilExpression)
 
 val identifierParser: Parser = mFunction { _, tokens ->
     (tokens[0] as? IdentifierToken)?.let {
-        IdentifierExpression(tokens[0].text.toString()).also { tokens.drop(1) }
+        IdentifierExpression(tokens[0].text.toString().also { tokens.drop(1) })
     }
 }
 
@@ -92,46 +56,13 @@ val numberLiteralParser: Parser = mFunction { _, tokens ->
 val apostropheParser: Parser = mFunction { env, tokens ->
     tokens[0].takeIf { it === ApostropheToken }?.let {
         tokens.drop(1)
-        val value = tokens.nextExpression(env) as SExpression
         @Suppress("UNCHECKED_CAST")
-        QuoteExpression(value as List<Any>)
+        val value = tokens.nextExpression(env) as SExpression
+        listOf(IdentifierExpression("quote"), value)
     }
 }
 
-data class DefExpression(val name: String, val expression: Expression)
-val defParser = uniqueSExpressionParser(DefToken) { env, tokens ->
-    val name = (tokens.nextExpression(env) as IdentifierExpression).name
-    val expression = tokens.nextExpression(env)
-    DefExpression(name, expression)
-}
-
-data class LambdaExpression(val argNames: List<String>, val expressions: List<Expression>)
-val lambdaParser = uniqueSExpressionParser(LambdaToken) { env, tokens ->
-    @Suppress("UNCHECKED_CAST")
-    val argNames = (tokens.nextExpression(env) as List<IdentifierExpression>).map { it.name }
-    val expressions = mutableListOf<Expression>()
-    while (tokens[0] != CParenToken) {
-        expressions.add(tokens.nextExpression(env))
-    }
-    LambdaExpression(argNames, expressions)
-}
-
-data class IfExpression(val condition: Expression, val ifTrue: Expression, val ifFalse: Expression?)
-val ifParser = uniqueSExpressionParser(IfToken) { env, tokens ->
-    val condition = tokens.nextExpression(env)
-    val ifTrue = tokens.nextExpression(env)
-    val ifFalse = if (tokens[0] === CParenToken) null else tokens.nextExpression(env)
-    IfExpression(condition, ifTrue, ifFalse)
-}
-
-data class QuoteExpression(val value: List<Expression>)
-val quoteParser = uniqueSExpressionParser(QuoteToken) { env, tokens ->
-    val value = tokens.nextExpression(env) as SExpression
-    @Suppress("UNCHECKED_CAST")
-    QuoteExpression(value as List<Any>)
-}
-
-private object CParenExpression : TokenExpression(CParenToken)
+typealias CParenExpression = CParenToken
 val sExpressionParser: Parser = mFunction { env, tokens ->
     tokens.takeIf { it[0] === OParenToken }?.let {
         it
