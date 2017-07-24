@@ -12,6 +12,7 @@ interface IRExpression {
 object UnitIRExpression : LiteralIRExpression(Unit)
 open class LiteralIRExpression(val literal: Any) : IRExpression {
     override fun eval(environment: Environment) = literal
+    override fun toString() = "$literal"
 }
 
 val IR_GENERATOR_INDEX by GlobalMemoryRegistry
@@ -165,7 +166,7 @@ val ifIRGenerator: IRGenerator = uniqueSExpressionIRGenerator("if") { env, sExpr
 
 val quoteIRGenerator: IRGenerator = uniqueSExpressionIRGenerator("quote") { _, sExpression ->
     @Suppress("UNCHECKED_CAST")
-    LiteralIRExpression((sExpression[0] as SExpression).toConsList())
+    LiteralIRExpression((sExpression[0] as SExpression).toConsTree())
 }
 
 data class InvokeIRExpression(@JvmField val expression: IRExpression, @JvmField val arg: IRExpression) : IRExpression {

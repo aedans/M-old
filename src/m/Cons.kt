@@ -9,7 +9,16 @@ object Nil {
 }
 
 class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) {
-    override fun toString() = "($car . $cdr)"
+    override fun toString() = toString(true)
+    fun toString(b: Boolean): String = when (cdr) {
+        Nil -> "$car"
+        is ConsCell -> if (b) "(${this.toString(false)})" else "$car ${cdr.toString(false)}"
+        else -> "($car . $cdr)"
+    }
 }
 
-fun List<Any>.toConsList(): Any = if (size == 0) Nil else ConsCell(first(), drop(1).toConsList())
+fun Any.toConsTree(): Any = when (this) {
+    is List<*> -> this.toConsTree()
+    else -> this
+}
+fun List<*>.toConsTree(): Any = if (size == 0) Nil else ConsCell(first()!!.toConsTree(), drop(1).toConsTree())

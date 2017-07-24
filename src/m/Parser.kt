@@ -5,7 +5,7 @@ package m
  */
 
 typealias Expression = Any
-typealias SExpression = List<Any>
+typealias SExpression = List<Expression>
 typealias Parser = (Environment) -> (LookaheadIterator<Token>) -> Expression?
 
 val PARSER_INDEX by GlobalMemoryRegistry
@@ -13,6 +13,7 @@ val PARSER_INDEX by GlobalMemoryRegistry
 fun Environment.getParsers() = getHeapValue(PARSER_INDEX) as List<Parser>
 
 fun LookaheadIterator<Token>.parse(environment: Environment) = collect { nextExpression(environment) }
+        .lookaheadIterator()
 
 fun LookaheadIterator<Token>.nextExpression(environment: Environment) = environment
         .getParsers()
@@ -20,7 +21,7 @@ fun LookaheadIterator<Token>.nextExpression(environment: Environment) = environm
         ?: throw Exception("Unexpected token ${this[0]}")
 
 class IdentifierExpression(val name: String) {
-    override fun toString() = "$$name"
+    override fun toString() = name
 }
 
 val identifierParser: Parser = mFunction { _, tokens ->

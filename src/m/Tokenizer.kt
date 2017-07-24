@@ -16,50 +16,22 @@ object WhitespaceOrCommentToken : Token(" ")
 
 typealias Tokenizer = (Environment) -> (LookaheadIterator<Char>) -> Token?
 
-class CharSequenceLookaheadIterator(var charSequence: CharSequence) : LookaheadIterator<Char> {
-    override fun get(i: Int) = charSequence[i]
-    override fun hasNext() = charSequence.isNotEmpty()
-    override fun iterator() = charSequence.iterator()
-    override fun drop(i: Int) {
-        charSequence = charSequence.subSequence(i, charSequence.length)
-    }
-}
-
-fun CharSequence.lookaheadIterator() = CharSequenceLookaheadIterator(this)
-fun InputStream.lookaheadIterator() = iterator().lookaheadIterator()
-operator fun InputStream.iterator() = object : Iterator<Char> {
-    override fun hasNext() = this@iterator.available() != 0
-    override fun next() = this@iterator.read().toChar()
-}
-
-fun Iterator<Token>.noWhitespaceOrComments() = object : Iterator<Token> {
-    var nextNonWhitespaceOrComment = nextNonWhitespaceOrCommentOrNull()
-    tailrec fun nextNonWhitespaceOrCommentOrNull(): Token? {
-        val next = nextOrNull()
-        return if (next !== WhitespaceOrCommentToken) next else nextNonWhitespaceOrCommentOrNull()
-    }
-
-    fun nextOrNull() = if (this@noWhitespaceOrComments.hasNext()) this@noWhitespaceOrComments.next() else null
-    override fun hasNext() = nextNonWhitespaceOrComment != null
-    override fun next(): Token {
-        val oldNextNonWhitespaceOrComment = nextNonWhitespaceOrComment
-        nextNonWhitespaceOrComment = nextNonWhitespaceOrCommentOrNull()
-        return oldNextNonWhitespaceOrComment ?: throw NoSuchElementException()
-    }
-}
+fun Iterator<Token>.noWhitespaceOrComments() = asSequence().filter { it !== WhitespaceOrCommentToken }.iterator()
 
 val TOKENIZER_INDEX by GlobalMemoryRegistry
 @Suppress("UNCHECKED_CAST")
 fun Environment.getTokenizers() = getHeapValue(TOKENIZER_INDEX) as List<Tokenizer>
 
 fun LookaheadIterator<Char>.tokenize(environment: Environment) = collect { nextToken(environment) }
+        .noWhitespaceOrComments()
+        .lookaheadIterator()
 
 private fun LookaheadIterator<Char>.nextToken(environment: Environment) = environment
         .getTokenizers()
         .firstNonNull { it(environment)(this) }
         ?: throw Exception("Unexpected character ${this[0]} (${this[0].toInt()})")
 
-fun charTokenizer(char: Char, token: Token): Tokenizer = mFunction { _, str ->
+private fun charTokenizer(char: Char, token: Token): Tokenizer = mFunction { _, str ->
     str[0].takeIf { it == char }
             ?.let { token }
             ?.also { str.drop(1) }

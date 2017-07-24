@@ -6,10 +6,9 @@ package m
 
 fun IdentifierIRExpression.evaluate(environment: Environment) = memoryLocation(environment)
 
-fun DefIRExpression.evaluate(environment: Environment): Int {
+fun DefIRExpression.evaluate(environment: Environment) {
     val index = (environment.getLocation(name) as MemoryLocation.HeapPointer).index
     environment.setHeapValue(index, expression.eval(environment))
-    return index
 }
 
 fun LambdaIRExpression.evaluate(environment: Environment) = lambda(

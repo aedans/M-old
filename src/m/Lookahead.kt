@@ -37,7 +37,7 @@ class IteratorLookaheadIterator<out T>(private val iterator: Iterator<T>) : Look
     }
 }
 
-fun <T, R> LookaheadIterator<T>.collect(collector: (LookaheadIterator<T>) -> R): Iterator<R> = object : Iterator<R> {
+fun <T, R> LookaheadIterator<T>.collect(collector: (LookaheadIterator<T>) -> R) = object : Iterator<R> {
     override fun hasNext() = this@collect.hasNext()
     override fun next(): R = collector(this@collect)
 }

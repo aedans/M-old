@@ -48,7 +48,10 @@ fun main(args: Array<String>) {
                     val output = StringOutputStream()
                     val env = getDefaultEnvironment(output)
 
-                    src.interpret(env)
+                    src
+                            .lookaheadIterator()
+                            .toIR(env)
+                            .forEach { it.eval(env) }
 
                     val oString = output.string.filter { it != '\r' && it != '\n' }
                     val eString = type.expected.filter { it != '\r' && it != '\n' }
@@ -123,7 +126,7 @@ val helloWorld9 by TestType.SuccessTest("Hello, world!") src """
 (print x)
 """
 
-val quote by TestType.SuccessTest("(1 . (2 . (3 . nil)))(1 . (2 . (3 . nil)))") src """
+val quote by TestType.SuccessTest("(1 2 3)(1 2 3)") src """
 (print (quote (1 2 3)))
 (print '(1 2 3))
 """
