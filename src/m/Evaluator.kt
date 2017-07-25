@@ -4,16 +4,15 @@ package m
  * Created by Aedan Smith.
  */
 
-fun IdentifierIRExpression.evaluate(environment: Environment) = memoryLocation(environment)
+fun IdentifierIRExpression.evaluate(memory: Memory) = memoryLocation.get(memory)
 
-fun DefIRExpression.evaluate(environment: Environment) {
-    val index = (environment.getLocation(name) as MemoryLocation.HeapPointer).index
-    environment.setHeapValue(index, expression.eval(environment))
+fun DefIRExpression.evaluate(memory: Memory) {
+    location.set(memory, expression.eval(memory))
 }
 
-fun LambdaIRExpression.evaluate(environment: Environment) = lambda(
-        environment,
-        closures.mapToArray { it(environment) },
+fun LambdaIRExpression.evaluate(memory: Memory) = lambda(
+        memory,
+        closures.mapToArray { it.get(memory) },
         value,
         expressions
 )
@@ -24,17 +23,17 @@ private inline fun <T> List<T>.mapToArray(func: (T) -> Any): Array<Any> {
     return array
 }
 
-fun lambda(env: Environment, closures: Array<Any>, value: IRExpression, expressions: List<IRExpression>) = { arg: Any ->
-    closures.forEach { env.push(it) }
-    env.push(arg)
-    expressions.forEach { it.eval(env) }
-    val rValue = value.eval(env)
-    env.pop()
-    closures.forEach { env.pop() }
+fun lambda(memory: Memory, closures: Array<Any>, value: IRExpression, expressions: List<IRExpression>) = { arg: Any ->
+    closures.forEach { memory.push(it) }
+    memory.push(arg)
+    expressions.forEach { it.eval(memory) }
+    val rValue = value.eval(memory)
+    memory.pop()
+    closures.forEach { memory.pop() }
     rValue
 }
 
-fun IfIRExpression.evaluate(env: Environment) = if (condition.eval(env) as Boolean)
-    ifTrue.eval(env)
+fun IfIRExpression.evaluate(memory: Memory) = if (condition.eval(memory) as Boolean)
+    ifTrue.eval(memory)
 else
-    ifFalse.eval(env)
+    ifFalse.eval(memory)

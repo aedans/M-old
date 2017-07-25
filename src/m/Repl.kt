@@ -1,7 +1,6 @@
 package m
 
 import java.io.InputStream
-import java.io.OutputStream
 import java.io.PrintStream
 
 /**
@@ -14,12 +13,12 @@ object Repl : Runnable {
         run(env)
     }
 
-    private tailrec fun run(environment: Environment,
-                    irExpressionIterator: Iterator<IRExpression> = ReplStream(System.`in`, System.out)
-                            .lookaheadIterator()
-                            .toIR(environment)) {
+    private tailrec fun run(environment: RuntimeEnvironment,
+                            irExpressionIterator: Iterator<IRExpression> = ReplStream(System.`in`, System.out)
+                                    .lookaheadIterator()
+                                    .toIR(environment.symbolTable)) {
         val success = try {
-            irExpressionIterator.next().eval(environment).takeIf { it != Unit }?.also { println(it) }
+            irExpressionIterator.next().eval(environment.memory).takeIf { it != Unit }?.also { println(it) }
             true
         } catch (t: Throwable) {
             t.printStackTrace(System.out)
@@ -42,10 +41,10 @@ class ReplStream(val inputStream: InputStream, val printStream: PrintStream) : I
     }
 }
 
-fun LookaheadIterator<Char>.toIR(environment: Environment) = this
+fun LookaheadIterator<Char>.toIR(symbolTable: SymbolTable) = this
         .tokenize()
         .parse()
-        .generateIR(environment)
+        .generateIR(symbolTable)
 
 operator fun InputStream.iterator() = object : Iterator<Char> {
     override fun hasNext() = this@iterator.available() != 0

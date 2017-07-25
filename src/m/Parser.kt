@@ -10,9 +10,13 @@ typealias SExpression = List<Expression>
 fun Iterator<Token>.parse() = lookaheadIterator().parse()
 fun LookaheadIterator<Token>.parse() = collect { nextExpression() }
 
-fun LookaheadIterator<Token>.nextExpression() = parsers
-        .firstNonNull { it(this) }
-        ?: throw Exception("Unexpected token ${this[0]}")
+fun LookaheadIterator<Token>.nextExpression() = null ?:
+        parseIdentifier(this) ?:
+        parseStringLiteral(this) ?:
+        parseNumberLiteral(this) ?:
+        parseApostrophe(this) ?:
+        parseSExpression(this) ?:
+        throw Exception("Unexpected token ${this[0]}")
 
 class IdentifierExpression(val name: String) {
     override fun toString() = name

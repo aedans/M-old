@@ -8,8 +8,8 @@ import kotlin.reflect.KClass
  * Created by Aedan Smith.
  */
 
-fun getDefaultEnvironment(out: OutputStream): Environment {
-    val env = GlobalEnvironment()
+fun getDefaultEnvironment(out: OutputStream): RuntimeEnvironment {
+    val env = RuntimeEnvironment(IRSymbolTable(), Memory())
 
     env.setVar("true", true)
     env.setVar("false", false)

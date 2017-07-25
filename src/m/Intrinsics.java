@@ -8,7 +8,7 @@ import kotlin.jvm.functions.Function1;
 
 @SuppressWarnings("unchecked")
 final class Intrinsics {
-    static Object evaluate(InvokeIRExpression expression, Environment env) {
-        return (((Function1<Object, Object>) expression.expression.eval(env))).invoke(expression.arg.eval(env));
+    static Object evaluate(InvokeIRExpression expression, Memory memory) {
+        return (((Function1<Object, Object>) expression.expression.eval(memory))).invoke(expression.arg.eval(memory));
     }
 }

@@ -1,34 +1,49 @@
 package m
 
+import java.util.HashMap
+
 /**
  * Created by Aedan Smith.
  */
 
-typealias IRGenerator = (Environment, Expression) -> IRExpression?
+interface SymbolTable {
+    fun getLocation(name: String): MemoryLocation?
+    fun setLocation(name: String, location: MemoryLocation?)
+    fun allocateLocation(name: String): MemoryLocation
+}
+
+class IRSymbolTable(val container: SymbolTable? = null) : SymbolTable {
+    var allocationIndex = 0
+    val vars = HashMap<String, MemoryLocation?>()
+    override fun getLocation(name: String) = vars[name] ?: container?.getLocation(name)
+    override fun setLocation(name: String, location: MemoryLocation?) = vars.set(name, location)
+    override fun allocateLocation(name: String) = MemoryLocation.HeapPointer(allocationIndex++)
+}
+
 interface IRExpression {
-    fun eval(environment: Environment): Any
+    fun eval(memory: Memory): Any
 }
 
 object UnitIRExpression : LiteralIRExpression(Unit)
 open class LiteralIRExpression(val literal: Any) : IRExpression {
-    override fun eval(environment: Environment) = literal
+    override fun eval(memory: Memory) = literal
     override fun toString() = "$literal"
 }
 
-fun Iterator<Expression>.generateIR(environment: Environment) = lookaheadIterator().generateIR(environment)
-fun LookaheadIterator<Expression>.generateIR(environment: Environment): Iterator<IRExpression> = collect {
-    it[0].toIRExpression(environment).also { drop(1) }
+fun Iterator<Expression>.generateIR(symbolTable: SymbolTable) = lookaheadIterator().generateIR(symbolTable)
+fun LookaheadIterator<Expression>.generateIR(symbolTable: SymbolTable): Iterator<IRExpression> = collect {
+    it[0].toIRExpression(symbolTable).also { drop(1) }
 }
 
-fun Expression.toIRExpression(environment: Environment): IRExpression = null ?:
+fun Expression.toIRExpression(symbolTable: SymbolTable): IRExpression = null ?:
         generateStringLiteralIR(this) ?:
         generateNumberLiteralIR(this) ?:
-        generateIdentifierIR(environment, this) ?:
-        generateDefIR(environment, this) ?:
-        generateLambdaIR(environment, this) ?:
-        generateIfIR(environment, this) ?:
-        generateQuoteIR(environment, this) ?:
-        generateInvokeIR(environment, this) ?:
+        generateIdentifierIR(symbolTable, this) ?:
+        generateDefIR(symbolTable, this) ?:
+        generateLambdaIR(symbolTable, this) ?:
+        generateIfIR(symbolTable, this) ?:
+        generateQuoteIR(symbolTable, this) ?:
+        generateInvokeIR(symbolTable, this) ?:
         throw Exception("Unexpected expression ${this}")
 
 private inline fun <reified T : Expression> generateLiteralIR(expression: Expression) = expression
@@ -36,60 +51,42 @@ private inline fun <reified T : Expression> generateLiteralIR(expression: Expres
         ?.let { LiteralIRExpression(it) }
 
 private inline fun generateUniqueSExpressionIR(
-        environment: Environment,
+        symbolTable: SymbolTable,
         expression: Expression,
         name: String,
-        crossinline func: (Environment, SExpression) -> IRExpression
+        crossinline func: (SymbolTable, SExpression) -> IRExpression
 ) = expression.takeIfInstance<SExpression>()
         ?.takeIf { it[0].let { it is IdentifierExpression && it.name == name } }
-        ?.let { func(environment, it.drop(1)) }
+        ?.let { func(symbolTable, it.drop(1)) }
 
 fun generateStringLiteralIR(expression: Expression) = generateLiteralIR<StringLiteralExpression>(expression)
 fun generateNumberLiteralIR(expression: Expression) = generateLiteralIR<NumberLiteralExpression>(expression)
 
 data class IdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) : IRExpression {
-    override fun eval(environment: Environment) = evaluate(environment)
+    override fun eval(memory: Memory) = evaluate(memory)
     override fun toString() = "$name : $memoryLocation"
 }
 
-data class GlobalIdentifierIRExpression(
-        val name: String,
-        val memoryLocation: MemoryLocation.HeapPointer
-) : IRExpression {
-    var value: Any? = null
-    override fun eval(environment: Environment): Any {
-        val value = value
-        return if (value != null) value else {
-            this.value = memoryLocation(environment)
-            this.value!!
-        }
-    }
-
-    override fun toString() = "GLOBAL $name : $memoryLocation"
-}
-
-fun generateIdentifierIR(env: Environment, expression: Expression) = expression
+fun generateIdentifierIR(symbolTable: SymbolTable, expression: Expression) = expression
         .takeIfInstance<IdentifierExpression>()
         ?.let {
-            val location = env.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
-            when (location) {
-                is MemoryLocation.HeapPointer -> GlobalIdentifierIRExpression(it.name, location)
-                else -> IdentifierIRExpression(it.name, location)
-            }
+            val location = symbolTable.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
+            IdentifierIRExpression(it.name, location)
         }
 
-data class DefIRExpression(val name: String, val expression: IRExpression) : IRExpression {
-    override fun eval(environment: Environment) = evaluate(environment)
+data class DefIRExpression(val name: String, val expression: IRExpression, val location: MemoryLocation) : IRExpression {
+    override fun eval(memory: Memory) = evaluate(memory)
     override fun toString() = "(def $name $expression)"
 }
 
 fun generateDefIR(
-        env: Environment, expr: Expression
-) = generateUniqueSExpressionIR(env, expr, "def") { _, sExpression ->
+        symbolTable: SymbolTable, expr: Expression
+) = generateUniqueSExpressionIR(symbolTable, expr, "def") { _, sExpression ->
     val name = (sExpression[0] as IdentifierExpression).name
     val expression = sExpression[1]
-    env.setLocation(name, MemoryLocation.HeapPointer(env.allocateHeapValue()))
-    DefIRExpression(name, expression.toIRExpression(env))
+    val location = symbolTable.allocateLocation(name)
+    symbolTable.setLocation(name, location)
+    DefIRExpression(name, expression.toIRExpression(symbolTable), location)
 }
 
 data class LambdaIRExpression(
@@ -97,18 +94,18 @@ data class LambdaIRExpression(
         val expressions: List<IRExpression>,
         val value: IRExpression
 ) : IRExpression {
-    override fun eval(environment: Environment) = evaluate(environment)
+    override fun eval(memory: Memory) = evaluate(memory)
     override fun toString() = "(lambda $closures " +
             expressions.joinToString(separator = " ") + (if (expressions.isEmpty()) "" else " ") +
             "$value)"
 }
 
-class ClosedEnvironment(val environment: Environment) : Environment, Memory by environment {
+class ClosedSymbolTable(val symbolTable: SymbolTable) : SymbolTable {
     val vars = mutableMapOf<String, MemoryLocation.StackPointer>()
     val closures = mutableListOf<Pair<String, MemoryLocation>>()
 
     override fun getLocation(name: String): MemoryLocation? {
-        return vars[name] ?: environment.getLocation(name)?.let {
+        return vars[name] ?: symbolTable.getLocation(name)?.let {
             if (it is MemoryLocation.HeapPointer) it else {
                 closures.add(name to it)
                 val ptr = MemoryLocation.StackPointer(closures.size)
@@ -121,11 +118,13 @@ class ClosedEnvironment(val environment: Environment) : Environment, Memory by e
     override fun setLocation(name: String, location: MemoryLocation?) {
         vars.put(name, location as MemoryLocation.StackPointer)
     }
+
+    override fun allocateLocation(name: String) = symbolTable.allocateLocation(name)
 }
 
 fun generateLambdaIR(
-        env: Environment, expr: Expression
-) = generateUniqueSExpressionIR(env, expr, "lambda") { environment, sExpression ->
+        symbolTable: SymbolTable, expr: Expression
+) = generateUniqueSExpressionIR(symbolTable, expr, "lambda") { environment, sExpression ->
     @Suppress("UNCHECKED_CAST")
     val argNames = (sExpression[0] as SExpression).map { (it as IdentifierExpression).name }
     val expressions = sExpression.drop(1)
@@ -133,12 +132,12 @@ fun generateLambdaIR(
 }
 
 private fun generateLambdaIRExpression(
-        environment: Environment,
+        symbolTable: SymbolTable,
         argNames: List<String>,
         expressions: List<Expression>
 ): LambdaIRExpression {
     val argName = argNames[0]
-    val env = ClosedEnvironment(environment)
+    val env = ClosedSymbolTable(symbolTable)
     env.setLocation(argName, MemoryLocation.StackPointer(0))
     val irExpressions = when (argNames.size) {
         1 -> expressions.map { it.toIRExpression(env) }
@@ -156,13 +155,13 @@ data class IfIRExpression(
         val ifTrue: IRExpression,
         val ifFalse: IRExpression
 ) : IRExpression {
-    override fun eval(environment: Environment) = evaluate(environment)
+    override fun eval(memory: Memory) = evaluate(memory)
     override fun toString() = "(if $condition $ifTrue $ifFalse)"
 }
 
 fun generateIfIR(
-        env: Environment, expr: Expression
-) = generateUniqueSExpressionIR(env, expr, "if") { environment, sExpression ->
+        memory: SymbolTable, expr: Expression
+) = generateUniqueSExpressionIR(memory, expr, "if") { environment, sExpression ->
     val condition = sExpression[0]
     val ifTrue = sExpression[1]
     val ifFalse = if (sExpression.size > 2) sExpression[2] else null
@@ -174,23 +173,25 @@ fun generateIfIR(
 }
 
 fun generateQuoteIR(
-        env: Environment, expr: Expression
-) = generateUniqueSExpressionIR(env, expr, "quote") { _, sExpression ->
+        symbolTable: SymbolTable, expr: Expression
+) = generateUniqueSExpressionIR(symbolTable, expr, "quote") { _, sExpression ->
     @Suppress("UNCHECKED_CAST")
     LiteralIRExpression((sExpression[0] as SExpression).toConsTree())
 }
 
 data class InvokeIRExpression(@JvmField val expression: IRExpression, @JvmField val arg: IRExpression) : IRExpression {
     @Suppress("HasPlatformType")
-    override fun eval(environment: Environment) = Intrinsics.evaluate(this, environment)
+    override fun eval(memory: Memory) = Intrinsics.evaluate(this, memory)
     override fun toString() = "($expression $arg)"
 }
 
-fun generateInvokeIR(env: Environment, sExpression: Expression) = sExpression.takeIfInstance<SExpression>()?.let {
-    val expression = when (it.size) {
-        2 -> it[0].toIRExpression(env)
-        else -> it.subList(0, it.size - 1).toIRExpression(env)
-    }
-    val arg = it.last().toIRExpression(env)
-    InvokeIRExpression(expression, arg)
-}
+fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpression
+        .takeIfInstance<SExpression>()
+        ?.let {
+            val expression = when (it.size) {
+                2 -> it[0].toIRExpression(symbolTable)
+                else -> it.subList(0, it.size - 1).toIRExpression(symbolTable)
+            }
+            val arg = it.last().toIRExpression(symbolTable)
+            InvokeIRExpression(expression, arg)
+        }
