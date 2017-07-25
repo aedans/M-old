@@ -50,3 +50,11 @@ operator fun InputStream.iterator() = object : Iterator<Char> {
     override fun hasNext() = this@iterator.available() != 0
     override fun next() = this@iterator.read().toChar()
 }
+
+data class RuntimeEnvironment(val symbolTable: SymbolTable, val memory: Memory) {
+    fun setVar(name: String, obj: Any) {
+        val location = symbolTable.allocateLocation(name)
+        symbolTable.setLocation(name, location)
+        location.set(memory, obj)
+    }
+}

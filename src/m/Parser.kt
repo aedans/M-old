@@ -65,14 +65,3 @@ fun parseSExpression(tokens: LookaheadIterator<Token>): Expression? = tokens[0].
 } ?: CParenToken.takeIf { tokens[0] === it }
         ?.also { tokens.drop(1) }
         ?.let { CParenExpression }
-
-val parsers = listOf(
-        // Tokens
-        ::parseIdentifier,
-        ::parseStringLiteral,
-        ::parseNumberLiteral,
-        // Sugar
-        ::parseApostrophe,
-        // SExpressions
-        ::parseSExpression
-)

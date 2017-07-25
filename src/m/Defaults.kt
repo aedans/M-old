@@ -9,7 +9,7 @@ import kotlin.reflect.KClass
  */
 
 fun getDefaultEnvironment(out: OutputStream): RuntimeEnvironment {
-    val env = RuntimeEnvironment(IRSymbolTable(), Memory())
+    val env = RuntimeEnvironment(IRSymbolTable(), Memory(Stack(), Heap()))
 
     env.setVar("true", true)
     env.setVar("false", false)
