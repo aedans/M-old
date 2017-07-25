@@ -22,7 +22,25 @@ object Nil {
     override fun toString() = "nil"
 }
 
-class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) {
+class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) : Iterable<Any> {
+    val size get(): Int = if (car === Nil) 0 else if (cdr === Nil) 1 else (cdr as ConsCell).size + 1
+
+    override fun iterator() = object : Iterator<Any> {
+        var it: Any = this@ConsCell
+        override fun hasNext() = it !== Nil
+        override fun next(): Any {
+            val it = it as ConsCell
+            val next = it.car
+            this.it = it.cdr
+            return next
+        }
+    }
+
+    operator fun get(i: Int): Any = when (i) {
+        0 -> car
+        else -> (cdr as ConsCell)[i - 1]
+    }
+
     override fun toString() = toString(true)
     fun toString(b: Boolean): String = if (b) "(${this.toString(false)})" else when (cdr) {
         Nil -> "$car"
@@ -36,3 +54,6 @@ fun Any.toConsTree(): Any = when (this) {
     else -> this
 }
 fun List<*>.toConsTree(): Any = if (size == 0) Nil else ConsCell(first()!!.toConsTree(), drop(1).toConsTree())
+
+fun consListOf() = Nil
+fun consListOf(vararg items: Any): ConsCell = listOf(*items).toConsTree() as ConsCell

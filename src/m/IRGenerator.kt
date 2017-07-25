@@ -32,10 +32,11 @@ open class LiteralIRExpression(val literal: Any) : IRExpression {
 
 fun Iterator<Expression>.generateIR(symbolTable: SymbolTable) = lookaheadIterator().generateIR(symbolTable)
 fun LookaheadIterator<Expression>.generateIR(symbolTable: SymbolTable): Iterator<IRExpression> = collect {
-    it[0].toIRExpression(symbolTable).also { drop(1) }
+    next().toIRExpression(symbolTable)
 }
 
 fun Expression.toIRExpression(symbolTable: SymbolTable): IRExpression = null ?:
+        generateNilLiteralIR(this) ?:
         generateStringLiteralIR(this) ?:
         generateNumberLiteralIR(this) ?:
         generateIdentifierIR(symbolTable, this) ?:
@@ -57,8 +58,9 @@ private inline fun generateUniqueSExpressionIR(
         crossinline func: (SymbolTable, SExpression) -> IRExpression
 ) = expression.takeIfInstance<SExpression>()
         ?.takeIf { it[0].let { it is IdentifierExpression && it.name == name } }
-        ?.let { func(symbolTable, it.drop(1)) }
+        ?.let { func(symbolTable, it.cdr as SExpression) }
 
+fun generateNilLiteralIR(expression: Expression) = generateLiteralIR<Nil>(expression)
 fun generateStringLiteralIR(expression: Expression) = generateLiteralIR<StringLiteralExpression>(expression)
 fun generateNumberLiteralIR(expression: Expression) = generateLiteralIR<NumberLiteralExpression>(expression)
 
@@ -126,7 +128,7 @@ fun generateLambdaIR(
         symbolTable: SymbolTable, expr: Expression
 ) = generateUniqueSExpressionIR(symbolTable, expr, "lambda") { environment, sExpression ->
     @Suppress("UNCHECKED_CAST")
-    val argNames = (sExpression[0] as SExpression).map { (it as IdentifierExpression).name }
+    val argNames = (sExpression[0] as ConsCell).map { (it as IdentifierExpression).name }
     val expressions = sExpression.drop(1)
     generateLambdaIRExpression(environment, argNames, expressions)
 }
@@ -176,7 +178,7 @@ fun generateQuoteIR(
         symbolTable: SymbolTable, expr: Expression
 ) = generateUniqueSExpressionIR(symbolTable, expr, "quote") { _, sExpression ->
     @Suppress("UNCHECKED_CAST")
-    LiteralIRExpression((sExpression[0] as SExpression).toConsTree())
+    LiteralIRExpression(sExpression[0].toConsTree())
 }
 
 data class InvokeIRExpression(@JvmField val expression: IRExpression, @JvmField val arg: IRExpression) : IRExpression {
@@ -190,7 +192,7 @@ fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpre
         ?.let {
             val expression = when (it.size) {
                 2 -> it[0].toIRExpression(symbolTable)
-                else -> it.subList(0, it.size - 1).toIRExpression(symbolTable)
+                else -> it.take(it.size - 1).toConsTree().toIRExpression(symbolTable)
             }
             val arg = it.last().toIRExpression(symbolTable)
             InvokeIRExpression(expression, arg)

@@ -5,11 +5,10 @@ package m
  */
 
 typealias Expression = Any
-typealias SExpression = List<Expression>
+typealias SExpression = ConsCell
 
 fun Iterator<Token>.parse() = lookaheadIterator().parse()
 fun LookaheadIterator<Token>.parse() = collect { nextExpression() }
-
 fun LookaheadIterator<Token>.nextExpression() = null ?:
         parseIdentifier(this) ?:
         parseStringLiteral(this) ?:
@@ -50,8 +49,8 @@ fun parseNumberLiteral(tokens: LookaheadIterator<Token>) = tokens[0].takeIfInsta
 fun parseApostrophe(tokens: LookaheadIterator<Token>): SExpression? = tokens[0].takeIf { it === ApostropheToken }?.let {
     tokens.drop(1)
     @Suppress("UNCHECKED_CAST")
-    val value = tokens.nextExpression() as SExpression
-    listOf(IdentifierExpression("quote"), value)
+    val value = tokens.nextExpression()
+    consListOf(IdentifierExpression("quote"), value)
 }
 
 typealias CParenExpression = CParenToken
@@ -62,6 +61,7 @@ fun parseSExpression(tokens: LookaheadIterator<Token>): Expression? = tokens[0].
             .asSequence()
             .takeWhile { it !== CParenExpression }
             .toList()
+            .toConsTree()
 } ?: CParenToken.takeIf { tokens[0] === it }
         ?.also { tokens.drop(1) }
         ?.let { CParenExpression }

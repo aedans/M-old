@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
                     src
                             .iterator()
                             .lookaheadIterator()
-                            .toIR(env.symbolTable)
+                            .toIR(env)
                             .forEach { it.eval(env.memory) }
 
                     val oString = output.string.filter { it != '\r' && it != '\n' }

@@ -18,7 +18,7 @@ object Repl : Runnable {
     private tailrec fun run(environment: RuntimeEnvironment,
                             irExpressionIterator: Iterator<IRExpression> = ReplStream(System.`in`, System.out)
                                     .lookaheadIterator()
-                                    .toIR(environment.symbolTable)) {
+                                    .toIR(environment)) {
         val success = try {
             irExpressionIterator.next().eval(environment.memory).takeIf { it != Unit }?.also { println(it) }
             true
@@ -43,10 +43,11 @@ class ReplStream(val inputStream: InputStream, val printStream: PrintStream) : I
     }
 }
 
-fun LookaheadIterator<Char>.toIR(symbolTable: SymbolTable) = this
+fun LookaheadIterator<Char>.toIR(env: RuntimeEnvironment) = this
         .tokenize()
         .parse()
-        .generateIR(symbolTable)
+        .expandMacros(env)
+        .generateIR(env.symbolTable)
 
 operator fun InputStream.iterator() = object : Iterator<Char> {
     override fun hasNext() = this@iterator.available() != 0
