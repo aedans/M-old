@@ -11,54 +11,6 @@ import kotlin.reflect.KClass
 fun getDefaultEnvironment(out: OutputStream): Environment {
     val env = GlobalEnvironment()
 
-    env.setHeapValue(TOKENIZER_INDEX, mutableListOf(
-            // Chars
-            oParenTokenizer,
-            cParenTokenizer,
-            apostropheTokenizer,
-            // Whitespace
-            whitespaceTokenizer,
-            // Literals
-            stringLiteralTokenizer,
-            numberLiteralTokenizer,
-            // Identifiers
-            identifierTokenizer
-    ))
-
-    env.setHeapValue(PARSER_INDEX, mutableListOf(
-            // Tokens
-            identifierParser,
-            stringLiteralParser,
-            numberLiteralParser,
-            // Sugar
-            apostropheParser,
-            // SExpressions
-            sExpressionParser
-    ))
-
-    env.setHeapValue(IR_GENERATOR_INDEX, mutableListOf(
-            // Literals
-            stringLiteralIRGenerator,
-            numberLiteralIRGenerator,
-            // Identifier
-            identifierIRGenerator,
-            // Fundamentals
-            defIRGenerator,
-            lambdaIRGenerator,
-            ifIRGenerator,
-            quoteIRGenerator,
-            // Invoke
-            invokeIRGenerator
-    ))
-
-    env.setHeapValue(IDENTIFIER_IS_HEAD_INDEX, mFunction<Char, Boolean> {
-        it in 'a'..'z' || it in 'A'..'Z' || it in "!?+-*/=<>|&"
-    })
-
-    env.setHeapValue(IDENTIFIER_IS_TAIL_INDEX, mFunction<Char, Boolean> {
-        it in '0'..'9' || it == '-' || it == '_' || it == ':'
-    })
-
     env.setVar("true", true)
     env.setVar("false", false)
     env.setVar("nil", Nil)
@@ -71,7 +23,7 @@ fun getDefaultEnvironment(out: OutputStream): Environment {
     env.setVar("|", mFunction<Boolean, Boolean, Boolean> { x, y -> x || y })
     env.setVar("&", mFunction<Boolean, Boolean, Boolean> { x, y -> x && y })
 
-    env.setVar("=", mFunction<Any, Any, Any> { x, y -> x == y })
+    env.setVar("=", mFunction<Any, Any, Boolean> { x, y -> x == y })
     env.setVar("<", mFunction<Int, Int, Boolean> { x, y -> x < y })
     env.setVar(">", mFunction<Int, Int, Boolean> { x, y -> x > y })
     env.setVar("+", mFunction<Int, Int, Int> { x, y -> x + y })

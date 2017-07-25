@@ -17,14 +17,14 @@ object GlobalMemoryRegistry {
     }
 }
 
-sealed class MemoryLocation : (DynamicMemory) -> Any {
+sealed class MemoryLocation : (Memory) -> Any {
     class HeapPointer(val index: Int) : MemoryLocation() {
-        override fun invoke(memory: DynamicMemory) = memory.getHeapValue(index)!!
+        override fun invoke(memory: Memory) = memory.getHeapValue(index)
         override fun toString() = "*h$index"
     }
 
     class StackPointer(val index: Int) : MemoryLocation() {
-        override fun invoke(memory: DynamicMemory) = memory.getStackValue(index)
+        override fun invoke(memory: Memory) = memory.getStackValue(index)
         override fun toString() = "*s$index"
     }
 }
@@ -34,21 +34,20 @@ interface SymbolTable {
     fun setLocation(name: String, location: MemoryLocation?)
 }
 
-interface DynamicMemory {
-    fun getHeapValue(location: Int): Any?
-    fun setHeapValue(location: Int, obj: Any?)
+interface Memory {
+    fun getHeapValue(location: Int): Any
+    fun setHeapValue(location: Int, obj: Any)
+    fun addHeapValue(obj: Any): Int
+    fun allocateHeapValue() = addHeapValue(Nil)
 
     fun getStackValue(location: Int): Any
     fun push(any: Any)
     fun pop()
-
-    fun malloc(): Int
 }
 
-interface Environment : SymbolTable, DynamicMemory {
+interface Environment : SymbolTable, Memory {
     fun setVar(name: String, obj: Any) {
-        val index = malloc()
-        setHeapValue(index, obj)
+        val index = addHeapValue(obj)
         setLocation(name, MemoryLocation.HeapPointer(index))
     }
 }
@@ -68,21 +67,20 @@ class GlobalEnvironment(private val container: SymbolTable? = null) : Environmen
         stack.removeAt(stack.size - 1)
     }
 
-    val heap = ArrayList<Any?>()
+    val heap = ArrayList<Any>()
     private fun expand(i: Int) {
         while (heap.size <= i)
-            heap.add(null)
+            heap.add(Nil)
     }
 
-    override fun getHeapValue(location: Int): Any? = heap[location]
-    override fun setHeapValue(location: Int, obj: Any?) {
+    override fun getHeapValue(location: Int): Any = heap[location]
+    override fun addHeapValue(obj: Any): Int {
+        heap.add(obj)
+        return heap.size - 1
+    }
+
+    override fun setHeapValue(location: Int, obj: Any) {
         expand(location)
         heap[location] = obj
-    }
-
-    override fun malloc() = malloc(0)
-    tailrec fun malloc(index: Int): Int {
-        expand(index)
-        return if (heap[index] == null) index else malloc(index + 1)
     }
 }

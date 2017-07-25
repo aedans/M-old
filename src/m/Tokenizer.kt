@@ -12,56 +12,65 @@ open class Token(val text: CharSequence) {
 
 object WhitespaceOrCommentToken : Token(" ")
 
-typealias Tokenizer = (Environment) -> (LookaheadIterator<Char>) -> Token?
+private fun Iterator<Token>.noWhitespaceOrComments() = asSequence()
+        .filter { it !== WhitespaceOrCommentToken }
+        .iterator()
 
-private fun Iterator<Token>.noWhitespaceOrComments() = asSequence().filter { it !== WhitespaceOrCommentToken }.iterator()
-
-val TOKENIZER_INDEX by GlobalMemoryRegistry
-@Suppress("UNCHECKED_CAST")
-fun Environment.getTokenizers() = getHeapValue(TOKENIZER_INDEX) as List<Tokenizer>
-
-fun LookaheadIterator<Char>.tokenize(environment: Environment) = collect { nextToken(environment) }
+fun Iterator<Char>.tokenize() = lookaheadIterator().tokenize()
+fun LookaheadIterator<Char>.tokenize() = collect { nextToken() }
         .noWhitespaceOrComments()
-        .lookaheadIterator()
 
-private fun LookaheadIterator<Char>.nextToken(environment: Environment) = environment
-        .getTokenizers()
-        .firstNonNull { it(environment)(this) }
-        ?: throw Exception("Unexpected character ${this[0]}")
+private fun LookaheadIterator<Char>.nextToken() = null ?:
+        tokenizeOParen(this) ?:
+        tokenizeCParen(this) ?:
+        tokenizeApostrophe(this) ?:
+        tokenizeWhitespace(this) ?:
+        tokenizeStringLiteral(this) ?:
+        tokenizeNumberLiteral(this) ?:
+        tokenizeIdentifier(this) ?:
+        throw Exception("Unexpected character ${this[0]}")
 
-private fun charTokenizer(char: Char, token: Token): Tokenizer = mFunction { _, str ->
-    str[0].takeIf { it == char }
-            ?.let { token }
-            ?.also { str.drop(1) }
-}
+fun tokenizeChar(str: LookaheadIterator<Char>, char: Char, token: Token) = str[0].takeIf { it == char }
+        ?.let { token }
+        ?.also { str.drop(1) }
 
 object OParenToken : Token("(")
-val oParenTokenizer = charTokenizer('(', OParenToken)
+fun tokenizeOParen(str: LookaheadIterator<Char>) = tokenizeChar(str, '(', OParenToken)
 
 object CParenToken : Token(")")
-val cParenTokenizer = charTokenizer(')', CParenToken)
+fun tokenizeCParen(str: LookaheadIterator<Char>) = tokenizeChar(str, ')', CParenToken)
 
 object ApostropheToken : Token("'")
-val apostropheTokenizer = charTokenizer('\'', ApostropheToken)
+fun tokenizeApostrophe(str: LookaheadIterator<Char>) = tokenizeChar(str, '\'', ApostropheToken)
 
-val whitespaceTokenizer: Tokenizer = mFunction { _, str ->
-    str[0].takeIf(Char::isWhitespace)
-            ?.let { WhitespaceOrCommentToken }
-            ?.also { str.drop(1) }
-}
+fun tokenizeWhitespace(str: LookaheadIterator<Char>) = str[0].takeIf(Char::isWhitespace)
+        ?.let { WhitespaceOrCommentToken }
+        ?.also { str.drop(1) }
 
 class StringLiteralToken(string: String) : Token(string)
-val stringLiteralTokenizer: Tokenizer = mFunction { _, str ->
-    str.takeIf { it[0] == '"' }?.let {
-        it.drop(1)
-        StringLiteralToken(it.tokenizeStringLiteral())
-    }
+fun tokenizeStringLiteral(str: LookaheadIterator<Char>) = str[0].takeIf { it == '"' }?.let {
+    str.drop(1)
+    StringLiteralToken(str.tokenizeStringLiteral())
 }
 
-private fun LookaheadIterator<Char>.tokenizeStringLiteral(): String = when (this[0]) {
-    '"' -> "".also { drop(1) }
-    '\\' -> this[1].also { drop(2) } + tokenizeStringLiteral()
-    else -> this[0].also { drop(1) } + tokenizeStringLiteral()
+private fun LookaheadIterator<Char>.tokenizeStringLiteral(): String {
+    val output = mutableListOf<Char>()
+    tokenizeStringLiteral(output)
+    return String(output.toCharArray())
+}
+
+private tailrec fun LookaheadIterator<Char>.tokenizeStringLiteral(output: MutableList<Char>): Unit = when (this[0]) {
+    '"' -> drop(1)
+    '\\' -> {
+        output.add(this[1])
+        drop(2)
+        tokenizeStringLiteral(output)
+    }
+    else -> {
+        output.add(this[0])
+        drop(1)
+        tokenizeStringLiteral(output)
+    }
 }
 
 typealias NumberType = Int
@@ -73,10 +82,12 @@ val FLOAT_TYPE = 4
 val DOUBLE_TYPE = 5
 class NumberLiteralToken(string: String, val type: NumberType) : Token(string)
 
-val numberLiteralTokenizer: Tokenizer = mFunction { _, str ->
-    val number = String(str.takeWhile { it in '0'..'9' || it == '.' }.toCharArray())
-    number.takeIf { it.isNotEmpty() }?.let {
-        str.drop(number.length)
+fun tokenizeNumberLiteral(str: LookaheadIterator<Char>): NumberLiteralToken? {
+    var number = ""
+    while (str[0].let { it in '0'..'9' || it == '.' }) {
+        number += str.next()
+    }
+    return number.takeIf { it.isNotEmpty() }?.let {
         var drop = true
         val type = when (str[0]) {
             'b', 'B' -> BYTE_TYPE
@@ -95,16 +106,15 @@ val numberLiteralTokenizer: Tokenizer = mFunction { _, str ->
     }
 }
 
+private fun isIdentifierHead(it: Char) = it in 'a'..'z' || it in 'A'..'Z' || it in "_:!?+-*/=<>|&"
+private fun isIdentifierTail(it: Char) = isIdentifierHead(it) || it in '0'..'9'
+
 class IdentifierToken(name: String) : Token(name)
-val IDENTIFIER_IS_HEAD_INDEX by GlobalMemoryRegistry
-val IDENTIFIER_IS_TAIL_INDEX by GlobalMemoryRegistry
 @Suppress("UNCHECKED_CAST")
-val identifierTokenizer: Tokenizer = mFunction { env, str ->
-    val isHead = env.getHeapValue(IDENTIFIER_IS_HEAD_INDEX) as (Char) -> Boolean
-    str.takeIf { isHead(str[0]) }?.let {
-        val isTail = env.getHeapValue(IDENTIFIER_IS_TAIL_INDEX) as (Char) -> Boolean
-        val chars = str.takeWhile { isHead(it) || isTail(it) }
-        str.drop(chars.size)
-        IdentifierToken(String(chars.toCharArray()))
+fun tokenizeIdentifier(str: LookaheadIterator<Char>) = str[0].takeIf { isIdentifierHead(it) }?.let {
+    var string = ""
+    while (isIdentifierTail(str[0])) {
+        string += str.next()
     }
+    IdentifierToken(string)
 }

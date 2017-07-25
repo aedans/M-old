@@ -4,7 +4,7 @@ package m
  * Created by Aedan Smith.
  */
 
-typealias IRGenerator = (Environment) -> (Expression) -> IRExpression?
+typealias IRGenerator = (Environment, Expression) -> IRExpression?
 interface IRExpression {
     fun eval(environment: Environment): Any
 }
@@ -15,44 +15,47 @@ open class LiteralIRExpression(val literal: Any) : IRExpression {
     override fun toString() = "$literal"
 }
 
-val IR_GENERATOR_INDEX by GlobalMemoryRegistry
-@Suppress("UNCHECKED_CAST")
-fun Environment.getIRGenerators() = this.getHeapValue(m.IR_GENERATOR_INDEX) as List<IRGenerator>
-
+fun Iterator<Expression>.generateIR(environment: Environment) = lookaheadIterator().generateIR(environment)
 fun LookaheadIterator<Expression>.generateIR(environment: Environment): Iterator<IRExpression> = collect {
     it[0].toIRExpression(environment).also { drop(1) }
 }
 
-fun Expression.toIRExpression(environment: Environment) = environment
-        .getIRGenerators()
-        .firstNonNull { it(environment)(this) }
-        ?: throw Exception("Unexpected expression ${this}")
+fun Expression.toIRExpression(environment: Environment): IRExpression = null ?:
+        generateStringLiteralIR(this) ?:
+        generateNumberLiteralIR(this) ?:
+        generateIdentifierIR(environment, this) ?:
+        generateDefIR(environment, this) ?:
+        generateLambdaIR(environment, this) ?:
+        generateIfIR(environment, this) ?:
+        generateQuoteIR(environment, this) ?:
+        generateInvokeIR(environment, this) ?:
+        throw Exception("Unexpected expression ${this}")
 
-private inline fun <reified T : Expression> literalIRGenerator(): IRGenerator = mFunction { _, expression ->
-    expression.takeIfInstance<T>()?.let { LiteralIRExpression(it) }
-}
+private inline fun <reified T : Expression> generateLiteralIR(expression: Expression) = expression
+        .takeIfInstance<T>()
+        ?.let { LiteralIRExpression(it) }
 
-private inline fun uniqueSExpressionIRGenerator(
+private inline fun generateUniqueSExpressionIR(
+        environment: Environment,
+        expression: Expression,
         name: String,
         crossinline func: (Environment, SExpression) -> IRExpression
-): IRGenerator = mFunction { env, expression ->
-    expression
-            .takeIfInstance<SExpression>()
-            ?.takeIf { it[0].let { it is IdentifierExpression && it.name == name } }
-            ?.let {
-                func(env, it.drop(1))
-            }
-}
+) = expression.takeIfInstance<SExpression>()
+        ?.takeIf { it[0].let { it is IdentifierExpression && it.name == name } }
+        ?.let { func(environment, it.drop(1)) }
 
-val stringLiteralIRGenerator: IRGenerator = literalIRGenerator<StringLiteralExpression>()
-val numberLiteralIRGenerator: IRGenerator = literalIRGenerator<NumberLiteralExpression>()
+fun generateStringLiteralIR(expression: Expression) = generateLiteralIR<StringLiteralExpression>(expression)
+fun generateNumberLiteralIR(expression: Expression) = generateLiteralIR<NumberLiteralExpression>(expression)
 
 data class IdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) : IRExpression {
     override fun eval(environment: Environment) = evaluate(environment)
     override fun toString() = "$name : $memoryLocation"
 }
 
-data class GlobalIdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation.HeapPointer) : IRExpression {
+data class GlobalIdentifierIRExpression(
+        val name: String,
+        val memoryLocation: MemoryLocation.HeapPointer
+) : IRExpression {
     var value: Any? = null
     override fun eval(environment: Environment): Any {
         val value = value
@@ -65,25 +68,27 @@ data class GlobalIdentifierIRExpression(val name: String, val memoryLocation: Me
     override fun toString() = "GLOBAL $name : $memoryLocation"
 }
 
-val identifierIRGenerator: IRGenerator = mFunction { env, expression ->
-    expression.takeIfInstance<IdentifierExpression>()?.let {
-        val location = env.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
-        when (location) {
-            is MemoryLocation.HeapPointer -> GlobalIdentifierIRExpression(it.name, location)
-            else -> IdentifierIRExpression(it.name, location)
+fun generateIdentifierIR(env: Environment, expression: Expression) = expression
+        .takeIfInstance<IdentifierExpression>()
+        ?.let {
+            val location = env.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
+            when (location) {
+                is MemoryLocation.HeapPointer -> GlobalIdentifierIRExpression(it.name, location)
+                else -> IdentifierIRExpression(it.name, location)
+            }
         }
-    }
-}
 
 data class DefIRExpression(val name: String, val expression: IRExpression) : IRExpression {
     override fun eval(environment: Environment) = evaluate(environment)
     override fun toString() = "(def $name $expression)"
 }
 
-val defIRGenerator: IRGenerator = uniqueSExpressionIRGenerator("def") { env, sExpression ->
+fun generateDefIR(
+        env: Environment, expr: Expression
+) = generateUniqueSExpressionIR(env, expr, "def") { _, sExpression ->
     val name = (sExpression[0] as IdentifierExpression).name
     val expression = sExpression[1]
-    env.setLocation(name, MemoryLocation.HeapPointer(env.malloc()))
+    env.setLocation(name, MemoryLocation.HeapPointer(env.allocateHeapValue()))
     DefIRExpression(name, expression.toIRExpression(env))
 }
 
@@ -98,7 +103,7 @@ data class LambdaIRExpression(
             "$value)"
 }
 
-class ClosedEnvironment(val environment: Environment) : Environment, DynamicMemory by environment {
+class ClosedEnvironment(val environment: Environment) : Environment, Memory by environment {
     val vars = mutableMapOf<String, MemoryLocation.StackPointer>()
     val closures = mutableListOf<Pair<String, MemoryLocation>>()
 
@@ -118,7 +123,9 @@ class ClosedEnvironment(val environment: Environment) : Environment, DynamicMemo
     }
 }
 
-val lambdaIRGenerator: IRGenerator = uniqueSExpressionIRGenerator("lambda") { environment, sExpression ->
+fun generateLambdaIR(
+        env: Environment, expr: Expression
+) = generateUniqueSExpressionIR(env, expr, "lambda") { environment, sExpression ->
     @Suppress("UNCHECKED_CAST")
     val argNames = (sExpression[0] as SExpression).map { (it as IdentifierExpression).name }
     val expressions = sExpression.drop(1)
@@ -153,18 +160,22 @@ data class IfIRExpression(
     override fun toString() = "(if $condition $ifTrue $ifFalse)"
 }
 
-val ifIRGenerator: IRGenerator = uniqueSExpressionIRGenerator("if") { env, sExpression ->
+fun generateIfIR(
+        env: Environment, expr: Expression
+) = generateUniqueSExpressionIR(env, expr, "if") { environment, sExpression ->
     val condition = sExpression[0]
     val ifTrue = sExpression[1]
     val ifFalse = if (sExpression.size > 2) sExpression[2] else null
     IfIRExpression(
-            condition.toIRExpression(env),
-            ifTrue.toIRExpression(env),
-            ifFalse?.toIRExpression(env) ?: UnitIRExpression
+            condition.toIRExpression(environment),
+            ifTrue.toIRExpression(environment),
+            ifFalse?.toIRExpression(environment) ?: UnitIRExpression
     )
 }
 
-val quoteIRGenerator: IRGenerator = uniqueSExpressionIRGenerator("quote") { _, sExpression ->
+fun generateQuoteIR(
+        env: Environment, expr: Expression
+) = generateUniqueSExpressionIR(env, expr, "quote") { _, sExpression ->
     @Suppress("UNCHECKED_CAST")
     LiteralIRExpression((sExpression[0] as SExpression).toConsTree())
 }
@@ -175,14 +186,11 @@ data class InvokeIRExpression(@JvmField val expression: IRExpression, @JvmField 
     override fun toString() = "($expression $arg)"
 }
 
-val invokeIRGenerator: IRGenerator = mFunction { env, expression ->
-    expression.takeIfInstance<SExpression>()?.let {
-        @Suppress("NAME_SHADOWING")
-        val expression = when (it.size) {
-            2 -> it[0].toIRExpression(env)
-            else -> it.subList(0, it.size - 1).toIRExpression(env)
-        }
-        val arg = it.last().toIRExpression(env)
-        InvokeIRExpression(expression, arg)
+fun generateInvokeIR(env: Environment, sExpression: Expression) = sExpression.takeIfInstance<SExpression>()?.let {
+    val expression = when (it.size) {
+        2 -> it[0].toIRExpression(env)
+        else -> it.subList(0, it.size - 1).toIRExpression(env)
     }
+    val arg = it.last().toIRExpression(env)
+    InvokeIRExpression(expression, arg)
 }

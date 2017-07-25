@@ -49,6 +49,7 @@ fun main(args: Array<String>) {
                     val env = getDefaultEnvironment(output)
 
                     src
+                            .iterator()
                             .lookaheadIterator()
                             .toIR(env)
                             .forEach { it.eval(env) }

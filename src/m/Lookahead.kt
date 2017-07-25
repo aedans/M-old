@@ -4,15 +4,15 @@ package m
  * Created by Aedan Smith.
  */
 
-interface LookaheadIterator<out T> : Iterable<T> {
+interface LookaheadIterator<out T> : Iterator<T> {
     operator fun get(i: Int): T
     fun drop(i: Int)
-    fun hasNext(): Boolean
+    override fun hasNext(): Boolean
 }
 
 class IteratorLookaheadIterator<out T>(private val iterator: Iterator<T>) : LookaheadIterator<T> {
     private var cache = ArrayList<T>()
-    fun fillCache(i: Int) {
+    private fun fillCache(i: Int) {
         while (cache.size <= i && iterator.hasNext())
             cache.add(iterator.next())
     }
@@ -23,17 +23,13 @@ class IteratorLookaheadIterator<out T>(private val iterator: Iterator<T>) : Look
     }
 
     override fun hasNext() = cache.isNotEmpty() || iterator.hasNext()
+    override fun next() = this[0].also { drop(1) }
+
     override tailrec fun drop(i: Int) {
         if (i != 0) {
             cache.removeAt(0)
             drop(i - 1)
         }
-    }
-
-    override fun iterator() = object : Iterator<T> {
-        private var index = 0
-        override fun hasNext() = cache.size > index || iterator.hasNext()
-        override fun next() = get(index++)
     }
 }
 
