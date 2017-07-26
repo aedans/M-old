@@ -1,4 +1,6 @@
 /.idea
-/*.m
+/lib
 /out
 /M.iml
+/*.class
+/*.m
