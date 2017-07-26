@@ -4,6 +4,10 @@ package m
  * Created by Aedan Smith.
  */
 
+typealias MFunction = (Any) -> Any
+
+fun mMacro(mMacro: (Expression) -> Expression) = Macro(mMacro)
+
 inline fun <reified I, reified O> mFunction(
         crossinline mFunction: (I) -> O
 ) = object : (I) -> O {
@@ -23,7 +27,7 @@ object Nil {
 }
 
 class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) : Iterable<Any> {
-    val size get(): Int = if (car === Nil) 0 else if (cdr === Nil) 1 else (cdr as ConsCell).size + 1
+    val size get(): Int = if (cdr === Nil) 1 else (cdr as ConsCell).size + 1
 
     override fun iterator() = object : Iterator<Any> {
         var it: Any = this@ConsCell
@@ -54,6 +58,3 @@ fun Any.toConsTree(): Any = when (this) {
     else -> this
 }
 fun List<*>.toConsTree(): Any = if (size == 0) Nil else ConsCell(first()!!.toConsTree(), drop(1).toConsTree())
-
-fun consListOf() = Nil
-fun consListOf(vararg items: Any): ConsCell = listOf(*items).toConsTree() as ConsCell

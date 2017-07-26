@@ -8,16 +8,16 @@ A Minimal Lisp.
 (def <identifier> <expression>)
 ```
 
-Defines a global variable with name \<identifier\> and value \<expression\>.
+Defines a global variable with name identifier and value expression.
 Shadows previously defined variables. 
 
 ```
 (lambda (<identifier>+) <expression>+)
 ```
 
-Evaluates to an anonymous function which evaluates each \<expression\>.
-Each \<identifier\> is bound locally when the function is called.
-The return value of the function is equal to the return value of the last \<expression\>.
+Evaluates to an anonymous function which evaluates each expression.
+Each identifier is bound locally when the function is called.
+The return value of the function is equal to the return value of the last expression.
 
 Lambdas are curried; (lambda (x y) (+ x y)) is expanded to (lambda (x) (lambda (y) (+ x y))).
 Closures are supported.
@@ -26,14 +26,21 @@ Closures are supported.
 (if <condition> <then> <else>?)
 ```
 
-If \<condition\> is true, evaluates \<then\>, otherwise evaluates \<else\>.
-If there is no \<else\>, and \<condition\> is false, evaluates to Unit instead.
+If condition is true, evaluates then, otherwise evaluates else.
+If there is no else, and condition is false, evaluates to Unit instead.
 
 ```
-(quote <list>)
-'<list>
+'(<expression>+)
 ```
 
-Evaluates to \<list\>.
+Evaluates to a list of each expression.
 
-'(1 2 3) is syntactic sugar for (quote (1 2 3)).
+```
+`(<expression>+)
+```
+
+Evaluates to a list of each expression.
+
+Each expression in the list preceded with a comma will be evaluated and put into to the list.
+
+Each expression in the list preceded by a tilde will be evaluated and merged into the list.

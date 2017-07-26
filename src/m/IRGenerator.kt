@@ -36,6 +36,7 @@ fun LookaheadIterator<Expression>.generateIR(symbolTable: SymbolTable): Iterator
 }
 
 fun Expression.toIRExpression(symbolTable: SymbolTable): IRExpression = null ?:
+        generateUnitLiteralIR(this) ?:
         generateNilLiteralIR(this) ?:
         generateStringLiteralIR(this) ?:
         generateNumberLiteralIR(this) ?:
@@ -43,9 +44,16 @@ fun Expression.toIRExpression(symbolTable: SymbolTable): IRExpression = null ?:
         generateDefIR(symbolTable, this) ?:
         generateLambdaIR(symbolTable, this) ?:
         generateIfIR(symbolTable, this) ?:
-        generateQuoteIR(symbolTable, this) ?:
+        generateQuoteIR(this) ?:
+        generateQuasiquoteIR(symbolTable, this) ?:
         generateInvokeIR(symbolTable, this) ?:
         throw Exception("Unexpected expression ${this}")
+
+private inline fun <reified T : Expression> generateLiteralIR(
+        expression: Expression, irExpression: LiteralIRExpression
+) = expression
+        .takeIfInstance<T>()
+        ?.let { irExpression }
 
 private inline fun <reified T : Expression> generateLiteralIR(expression: Expression) = expression
         .takeIfInstance<T>()
@@ -60,7 +68,10 @@ private inline fun generateUniqueSExpressionIR(
         ?.takeIf { it[0].let { it is IdentifierExpression && it.name == name } }
         ?.let { func(symbolTable, it.cdr as SExpression) }
 
-fun generateNilLiteralIR(expression: Expression) = generateLiteralIR<Nil>(expression)
+object UnitLiteralIRExpression : LiteralIRExpression(Unit)
+fun generateUnitLiteralIR(expression: Expression) = generateLiteralIR<Unit>(expression, UnitLiteralIRExpression)
+object NilLiteralIRExpression : LiteralIRExpression(Nil)
+fun generateNilLiteralIR(expression: Expression) = generateLiteralIR<Nil>(expression, NilLiteralIRExpression)
 fun generateStringLiteralIR(expression: Expression) = generateLiteralIR<StringLiteralExpression>(expression)
 fun generateNumberLiteralIR(expression: Expression) = generateLiteralIR<NumberLiteralExpression>(expression)
 
@@ -174,11 +185,36 @@ fun generateIfIR(
     )
 }
 
-fun generateQuoteIR(
-        symbolTable: SymbolTable, expr: Expression
-) = generateUniqueSExpressionIR(symbolTable, expr, "quote") { _, sExpression ->
-    @Suppress("UNCHECKED_CAST")
-    LiteralIRExpression(sExpression[0].toConsTree())
+fun generateQuoteIR(expr: Expression) = expr.takeIfInstance<QuoteExpression>()?.let { LiteralIRExpression(it.cons) }
+
+data class QuasiquoteIRExpression(val irExpressions: List<Any>) : IRExpression {
+    override fun eval(memory: Memory) = evaluate(memory)
+    override fun toString() = "`${irExpressions.reversed()}"
+}
+
+data class UnquoteIRExpression(val irExpression: IRExpression) : IRExpression {
+    override fun eval(memory: Memory) = irExpression.eval(memory)
+    override fun toString() = ",$irExpression"
+}
+
+data class UnquoteSplicingIRExpression(val irExpression: IRExpression) : IRExpression {
+    override fun eval(memory: Memory) = irExpression.eval(memory)
+    override fun toString() = "~$irExpression"
+}
+
+fun generateQuasiquoteIR(table: SymbolTable, expr: Expression) = expr.takeIfInstance<QuasiquoteExpression>()?.let {
+    when (it.cons) {
+        Nil -> NilLiteralIRExpression
+        is ConsCell -> QuasiquoteIRExpression(it.cons.map {
+            when (it) {
+                is UnquoteExpression -> UnquoteIRExpression(it.cons.toIRExpression(table))
+                is UnquoteSplicingExpression -> UnquoteSplicingIRExpression(it.cons.toIRExpression(table))
+                is ConsCell -> UnquoteIRExpression(QuasiquoteExpression(it).toIRExpression(table))
+                else -> it
+            }
+        }.reversed())
+        else -> throw Exception("Cannot quasiquote ${it.cons}")
+    }
 }
 
 data class InvokeIRExpression(@JvmField val expression: IRExpression, @JvmField val arg: IRExpression) : IRExpression {
@@ -191,6 +227,7 @@ fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpre
         .takeIfInstance<SExpression>()
         ?.let {
             val expression = when (it.size) {
+                1 -> throw Exception("Cannot call function with no arguments")
                 2 -> it[0].toIRExpression(symbolTable)
                 else -> it.take(it.size - 1).toConsTree().toIRExpression(symbolTable)
             }

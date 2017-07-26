@@ -24,6 +24,9 @@ private fun LookaheadIterator<Char>.nextToken() = null ?:
         tokenizeOParen(this) ?:
         tokenizeCParen(this) ?:
         tokenizeApostrophe(this) ?:
+        tokenizeBacktick(this) ?:
+        tokenizeComma(this) ?:
+        tokenizeTilde(this) ?:
         tokenizeWhitespace(this) ?:
         tokenizeStringLiteral(this) ?:
         tokenizeNumberLiteral(this) ?:
@@ -42,6 +45,15 @@ fun tokenizeCParen(str: LookaheadIterator<Char>) = tokenizeChar(str, ')', CParen
 
 object ApostropheToken : Token("'")
 fun tokenizeApostrophe(str: LookaheadIterator<Char>) = tokenizeChar(str, '\'', ApostropheToken)
+
+object BacktickToken : Token("`")
+fun tokenizeBacktick(str: LookaheadIterator<Char>) = tokenizeChar(str, '`', BacktickToken)
+
+object CommaToken : Token(",")
+fun tokenizeComma(str: LookaheadIterator<Char>) = tokenizeChar(str, ',', CommaToken)
+
+object TildeToken : Token("~")
+fun tokenizeTilde(str: LookaheadIterator<Char>) = tokenizeChar(str, '~', TildeToken)
 
 fun tokenizeWhitespace(str: LookaheadIterator<Char>) = str[0].takeIf(Char::isWhitespace)
         ?.let { WhitespaceOrCommentToken }

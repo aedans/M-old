@@ -9,11 +9,14 @@ typealias SExpression = ConsCell
 
 fun Iterator<Token>.parse() = lookaheadIterator().parse()
 fun LookaheadIterator<Token>.parse() = collect { nextExpression() }
-fun LookaheadIterator<Token>.nextExpression() = null ?:
+fun LookaheadIterator<Token>.nextExpression(): Expression = null ?:
         parseIdentifier(this) ?:
         parseStringLiteral(this) ?:
         parseNumberLiteral(this) ?:
         parseApostrophe(this) ?:
+        parseBacktick(this) ?:
+        parseComma(this) ?:
+        parseTilde(this) ?:
         parseSExpression(this) ?:
         throw Exception("Unexpected token ${this[0]}")
 
@@ -46,15 +49,46 @@ fun parseNumberLiteral(tokens: LookaheadIterator<Token>) = tokens[0].takeIfInsta
     number
 }
 
-fun parseApostrophe(tokens: LookaheadIterator<Token>): SExpression? = tokens[0].takeIf { it === ApostropheToken }?.let {
-    tokens.drop(1)
-    @Suppress("UNCHECKED_CAST")
-    val value = tokens.nextExpression()
-    consListOf(IdentifierExpression("quote"), value)
+fun parseReaderMacro(tokens: LookaheadIterator<Token>, token: Token, lambda: (Expression) -> Expression) = tokens[0]
+        .takeIf { it === token }
+        ?.also { tokens.drop(1) }
+        ?.let { tokens.nextExpression() }
+        ?.let(lambda)
+
+data class QuoteExpression(val cons: Any) {
+    override fun toString() = "'$cons"
+}
+
+fun parseApostrophe(tokens: LookaheadIterator<Token>) = parseReaderMacro(tokens, ApostropheToken) {
+    QuoteExpression(it.toConsTree())
+}
+
+data class QuasiquoteExpression(val cons: Any) {
+    override fun toString() = "`$cons"
+}
+
+fun parseBacktick(tokens: LookaheadIterator<Token>) = parseReaderMacro(tokens, BacktickToken) {
+    QuasiquoteExpression(it.toConsTree())
+}
+
+data class UnquoteExpression(val cons: Any) {
+    override fun toString() = ",$cons"
+}
+
+fun parseComma(tokens: LookaheadIterator<Token>) = parseReaderMacro(tokens, CommaToken) {
+    UnquoteExpression(it.toConsTree())
+}
+
+data class UnquoteSplicingExpression(val cons: Any) {
+    override fun toString() = "~$cons"
+}
+
+fun parseTilde(tokens: LookaheadIterator<Token>) = parseReaderMacro(tokens, TildeToken) {
+    UnquoteSplicingExpression(it.toConsTree())
 }
 
 typealias CParenExpression = CParenToken
-fun parseSExpression(tokens: LookaheadIterator<Token>): Expression? = tokens[0].takeIf { it === OParenToken }?.let {
+fun parseSExpression(tokens: LookaheadIterator<Token>) = tokens[0].takeIf { it === OParenToken }?.let {
     tokens
             .also { it.drop(1) }
             .parse()

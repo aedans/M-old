@@ -86,3 +86,29 @@ fun IfIRExpression.evaluate(memory: Memory) = if (condition.eval(memory) as Bool
     ifTrue.eval(memory)
 else
     ifFalse.eval(memory)
+
+fun QuasiquoteIRExpression.evaluate(memory: Memory): Any {
+    var cons: Any = Nil
+    irExpressions.forEach {
+        when (it) {
+            is UnquoteIRExpression -> {
+                cons = ConsCell(it.eval(memory), cons)
+            }
+            is UnquoteSplicingIRExpression -> {
+                it.eval(memory).let {
+                    if (it is ConsCell) {
+                        it.reversed().forEach {
+                            cons = ConsCell(it, cons)
+                        }
+                    } else {
+                        cons = ConsCell(it, cons)
+                    }
+                }
+            }
+            else -> {
+                cons = ConsCell(it, cons)
+            }
+        }
+    }
+    return cons
+}

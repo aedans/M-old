@@ -127,9 +127,44 @@ val helloWorld9 by TestType.SuccessTest("Hello, world!") src """
 (print x)
 """
 
-val quote by TestType.SuccessTest("(1 2 3)(1 2 3)") src """
-(print (quote (1 2 3)))
-(print '(1 2 3))
+val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
+(def get
+  (lambda (list x)
+    (if (= x 0)
+      (car list)
+      (get (cdr list) (- x 1)))))
+
+(def drop
+  (lambda (list x)
+    (if (= x 0)
+      list
+      (drop (cdr list) (- x 1)))))
+
+(def let
+  (macro
+    (lambda (x)
+      `((lambda (,(get x 0)) ~(drop x 2)) ,(get x 1)))))
+
+(let hello "Hello, world!" (print hello))
+"""
+
+val quote by TestType.SuccessTest("(nil 1 2 3 (4 5 6))") src """
+(print '(() 1 2 3 (4 5 6)))
+"""
+
+val list by TestType.SuccessTest("(1 2 3)") src """
+(def nil?
+  (lambda (object)
+    (= object nil)))
+
+(def list
+  (macro
+    (lambda (x)
+      (if (nil? x)
+        nil
+        `(cons ,(car x) ,(list (cdr x)))))))
+
+(print (list 1 2 3))
 """
 
 val numberTokenizer by TestType.SuccessTest("""

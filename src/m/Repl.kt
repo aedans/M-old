@@ -49,12 +49,15 @@ fun LookaheadIterator<Char>.toIR(env: RuntimeEnvironment) = this
         .expandMacros(env)
         .generateIR(env.symbolTable)
 
+fun Expression.eval(env: RuntimeEnvironment) = expand(env).toIRExpression(env.symbolTable).eval(env.memory)
+
 operator fun InputStream.iterator() = object : Iterator<Char> {
     override fun hasNext() = this@iterator.available() != 0
     override fun next() = this@iterator.read().toChar()
 }
 
 data class RuntimeEnvironment(val symbolTable: SymbolTable, val memory: Memory) {
+    fun getVar(name: String) = symbolTable.getLocation(name)?.get(memory)
     fun setVar(name: String, obj: Any) {
         val location = symbolTable.allocateLocation(name)
         symbolTable.setLocation(name, location)
@@ -64,6 +67,9 @@ data class RuntimeEnvironment(val symbolTable: SymbolTable, val memory: Memory) 
 
 fun getDefaultEnvironment(out: OutputStream): RuntimeEnvironment {
     val env = RuntimeEnvironment(IRSymbolTable(), Memory(Stack(), Heap()))
+
+    env.setVar("macro", mFunction<MFunction, Macro> { mMacro(it) })
+    env.setVar("macroexpand", mMacro { QuoteExpression((it as SExpression).car.expand(env)) })
 
     env.setVar("true", true)
     env.setVar("false", false)
