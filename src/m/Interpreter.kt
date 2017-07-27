@@ -13,7 +13,7 @@ operator fun InputStream.iterator() = object : Iterator<Char> {
 }
 
 val LANGUAGE_INTERPRETED: Language = {
-    val env = getDefaultEnvironment(System.out)
+    val env = getDefaultEnvironment()
 
     File(it.source).inputStream()
             .iterator()

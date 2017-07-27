@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 
 object Repl : Runnable {
     override fun run() {
-        val env = getDefaultEnvironment(System.out)
+        val env = getDefaultEnvironment()
         run(env)
     }
 
@@ -42,9 +42,3 @@ class ReplStream(val inputStream: InputStream, val printStream: PrintStream) : I
         return inputStream.read().toChar()
     }
 }
-
-fun LookaheadIterator<Char>.toIR(env: RuntimeEnvironment) = this
-        .tokenize()
-        .parse()
-        .expandMacros(env)
-        .generateIR(env.symbolTable)

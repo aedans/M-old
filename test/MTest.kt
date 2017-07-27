@@ -2,6 +2,7 @@
 
 import m.*
 import java.io.OutputStream
+import java.io.PrintStream
 import javax.xml.stream.events.Characters
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
@@ -46,7 +47,7 @@ fun main(args: Array<String>) {
             when (type) {
                 is TestType.SuccessTest -> {
                     val output = StringOutputStream()
-                    val env = getDefaultEnvironment(output)
+                    val env = getDefaultEnvironment(out = PrintStream(output))
 
                     src
                             .iterator()
@@ -71,17 +72,17 @@ fun main(args: Array<String>) {
 }
 
 val helloWorld1 by TestType.SuccessTest("Hello, world!") src """
-(print "Hello, world!")
+(print stdout "Hello, world!")
 """
 
 val helloWorld2 by TestType.SuccessTest("Hello, world!") src """
 (def hello "Hello, world!")
-(print hello)
+(print stdout hello)
 """
 
 val helloWorld3 by TestType.SuccessTest("Hello, world!") src """
 (def hello "Hello, world!")
-(def test (lambda (x) (print x)))
+(def test (lambda (x) (print stdout x)))
 (test hello)
 """
 
@@ -90,7 +91,8 @@ val helloWorld4 by TestType.SuccessTest("Hello, world!") src """
 (def comma ", ")
 (def world "world")
 (def exclamation "!")
-(def print4 (lambda (w x y z) (print w) (print x) (print y) (print z)))
+(def test (lambda (x) (print stdout x)))
+(def print4 (lambda (w x y z) (test w) (test x) (test y) (test z)))
 (print4 hello comma world exclamation)
 """
 
@@ -100,31 +102,32 @@ val helloWorld5 by TestType.SuccessTest("Hello, world!") src """
 (def comma ", ")
 (def world "world")
 (def exclamation "!")
-(def print4 (lambda (w) (lambda (x) (lambda (y) (lambda (z) (print w) (print x) (print y) (print z))))))
+(def test (lambda (x) (print stdout x)))
+(def print4 (lambda (w) (lambda (x) (lambda (y) (lambda (z) (test w) (test x) (test y) (test z))))))
 (print4 hello comma world exclamation)
 """
 
 val helloWorld6 by TestType.SuccessTest("Hello, world!") src """
-(print (if true "Hello, world!" "error"))
+(print stdout (if true "Hello, world!" "error"))
 """
 
 val helloWorld7 by TestType.SuccessTest("Hello, world!") src """
-(print (if (if false true false) "error" "Hello, world!"))
+(print stdout (if (if false true false) "error" "Hello, world!"))
 """
 
 val helloWorld8 by TestType.SuccessTest("Hello, world!") src """
-(print (if true "Hello, world!"))
+(print stdout (if true "Hello, world!"))
 """
 
 val helloWorld9 by TestType.SuccessTest("Hello, world!") src """
 (def x "Hello")
-(print x)
+(print stdout x)
 (def x ", ")
-(print x)
+(print stdout x)
 (def x "world")
-(print x)
+(print stdout x)
 (def x "!")
-(print x)
+(print stdout x)
 """
 
 val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
@@ -145,11 +148,11 @@ val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
     (lambda (x)
       `((lambda (,(get x 0)) ~(drop x 2)) ,(get x 1)))))
 
-(let hello "Hello, world!" (print hello))
+(let hello "Hello, world!" (print stdout hello))
 """
 
 val quote by TestType.SuccessTest("(nil 1 2 3 (4 5 6))") src """
-(print '(() 1 2 3 (4 5 6)))
+(print stdout '(() 1 2 3 (4 5 6)))
 """
 
 val list by TestType.SuccessTest("(1 2 3)") src """
@@ -164,7 +167,7 @@ val list by TestType.SuccessTest("(1 2 3)") src """
         nil
         `(cons ,(car x) ,(list (cdr x)))))))
 
-(print (list 1 2 3))
+(print stdout (list 1 2 3))
 """
 
 val numberTokenizer by TestType.SuccessTest("""
@@ -176,12 +179,12 @@ class kotlin.Float
 class kotlin.Double
 """
 ) src """
-(println (class-of 0B))
-(println (class-of 0S))
-(println (class-of 0I))
-(println (class-of 0L))
-(println (class-of 0F))
-(println (class-of 0D))
+(println stdout (class-of 0B))
+(println stdout (class-of 0S))
+(println stdout (class-of 0I))
+(println stdout (class-of 0L))
+(println stdout (class-of 0F))
+(println stdout (class-of 0D))
 """
 
 val fibonacci by TestType.SuccessTest("""
@@ -199,5 +202,5 @@ val fibonacci by TestType.SuccessTest("""
 """) src """
 (def fib (lambda (x) (if (= x 0) 0 (if (= x 1) 1 (+ (fib (- x 1)) (fib (- x 2)))))))
 (def loop (lambda (x f) (if (= x 0) f (loop (- x 1) f)) (f x)))
-(loop 10 (lambda (x) (print x) (print " : ") (println (fib x))))
+(loop 10 (lambda (x) (print stdout x) (print stdout " : ") (println stdout (fib x))))
 """

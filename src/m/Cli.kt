@@ -15,6 +15,8 @@ private val languages = mapOf(
 
 class MArgs(parser: ArgParser) {
     val source by parser.positional("SOURCE", help = "Source filename")
+    val output by parser.storing("-o", "--output", help = "Output filename")
+            .default("a")
     val language by parser.storing("-x", help = "Language target; i = interpreted")
             .default("i")
 }

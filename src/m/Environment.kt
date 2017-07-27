@@ -1,6 +1,6 @@
 package m
 
-import java.io.OutputStream
+import java.io.InputStream
 import java.io.PrintStream
 import kotlin.reflect.KClass
 
@@ -17,7 +17,11 @@ data class RuntimeEnvironment(val symbolTable: SymbolTable, val memory: Memory) 
     }
 }
 
-fun getDefaultEnvironment(out: OutputStream): RuntimeEnvironment {
+fun getDefaultEnvironment(
+        `in`: InputStream = System.`in`,
+        out: PrintStream = System.out,
+        err: PrintStream = System.err
+): RuntimeEnvironment {
     val env = RuntimeEnvironment(IRSymbolTable(), Memory(Stack(), Heap()))
 
     env.setVar("macro", mFunction<MFunction, Macro> { mMacro(it) })
@@ -43,8 +47,12 @@ fun getDefaultEnvironment(out: OutputStream): RuntimeEnvironment {
     env.setVar("*", mFunction<Int, Int, Int> { x, y -> x * y })
     env.setVar("/", mFunction<Int, Int, Int> { x, y -> x / y })
 
-    env.setVar("print", mFunction<Any, Unit> { PrintStream(out).print(it) })
-    env.setVar("println", mFunction<Any, Unit> { PrintStream(out).println(it) })
+    env.setVar("stdin", `in`)
+    env.setVar("stdout", out)
+    env.setVar("stderr", err)
+    env.setVar("print", mFunction<PrintStream, Any, Unit> { p, o -> p.print(o) })
+    env.setVar("println", mFunction<PrintStream, Any, Unit> { p, o -> p.println(o) })
+
     env.setVar("class-of", mFunction<Any, KClass<*>> { it::class })
 
     return env
