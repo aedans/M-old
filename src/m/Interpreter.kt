@@ -12,14 +12,10 @@ operator fun InputStream.iterator() = object : Iterator<Char> {
     override fun next() = this@iterator.read().toChar()
 }
 
-val LANGUAGE_INTERPRETED: Language = {
-    val env = getDefaultEnvironment()
-
-    File(it.source).inputStream()
-            .iterator()
+fun File.interpret(env: RuntimeEnvironment) = inputStream().iterator().interpret(env)
+fun Iterator<Char>.interpret(env: RuntimeEnvironment) {
+    this
             .lookaheadIterator()
             .toIR(env)
-            .forEach {
-                it.eval(env.memory)
-            }
+            .forEach { it.eval(env.memory) }
 }

@@ -49,11 +49,7 @@ fun main(args: Array<String>) {
                     val output = StringOutputStream()
                     val env = getDefaultEnvironment(out = PrintStream(output))
 
-                    src
-                            .iterator()
-                            .lookaheadIterator()
-                            .toIR(env)
-                            .forEach { it.eval(env.memory) }
+                    src.iterator().interpret(env)
 
                     val oString = output.string.filter { it != '\r' && it != '\n' }
                     val eString = type.expected.filter { it != '\r' && it != '\n' }
