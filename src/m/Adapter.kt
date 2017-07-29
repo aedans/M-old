@@ -54,7 +54,7 @@ class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) : Iterable<Any> {
 }
 
 fun Any.toConsTree(): Any = when (this) {
-    is List<*> -> this.toConsTree()
+    is Iterator<*> -> this.toConsTree()
     else -> this
 }
-fun List<*>.toConsTree(): Any = if (size == 0) Nil else ConsCell(first()!!.toConsTree(), drop(1).toConsTree())
+fun Iterator<*>.toConsTree(): Any = if (!hasNext()) Nil else ConsCell(next()!!.toConsTree(), toConsTree())

@@ -94,7 +94,7 @@ fun parseSExpression(tokens: LookaheadIterator<Token>) = when (tokens[0]) {
             .parse()
             .asSequence()
             .takeWhile { it !== CParenExpression }
-            .toList()
+            .iterator()
             .toConsTree()
     CParenToken -> CParenExpression
             .also { tokens.drop(1) }

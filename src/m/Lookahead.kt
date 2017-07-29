@@ -7,7 +7,7 @@ package m
 class LookaheadIterator<out T>(private val iterator: Iterator<T>) : Iterator<T> {
     private var cache = ArrayList<T>()
     private fun fillCache(i: Int) {
-        while (cache.size <= i && iterator.hasNext())
+        while (cache.size <= i)
             cache.add(iterator.next())
     }
 
@@ -27,7 +27,9 @@ class LookaheadIterator<out T>(private val iterator: Iterator<T>) : Iterator<T> 
     }
 }
 
-fun <T, R> LookaheadIterator<T>.collect(collector: (LookaheadIterator<T>) -> R) = object : Iterator<R> {
+inline fun <T, R> LookaheadIterator<T>.collect(
+        crossinline collector: (LookaheadIterator<T>) -> R
+) = object : Iterator<R> {
     override fun hasNext() = this@collect.hasNext()
     override fun next(): R = collector(this@collect)
 }

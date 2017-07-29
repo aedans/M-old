@@ -12,6 +12,7 @@ fun Iterator<Expression>.expandMacros(env: RuntimeEnvironment) = lookaheadIterat
 fun LookaheadIterator<Expression>.expandMacros(env: RuntimeEnvironment) = collect { next().expand(env) }
 fun Expression.expand(env: RuntimeEnvironment): Expression = takeIfInstance<SExpression>()
         ?.map { it.expand(env) }
+        ?.iterator()
         ?.toConsTree()
         ?.let { expr ->
             expr as SExpression

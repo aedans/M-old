@@ -55,6 +55,7 @@ fun tokenizeComma(str: LookaheadIterator<Char>) = tokenizeChar(str, ',', CommaTo
 object TildeToken : Token("~")
 fun tokenizeTilde(str: LookaheadIterator<Char>) = tokenizeChar(str, '~', TildeToken)
 
+fun Char.isWhitespace() = this == ' ' || this == '\t' || this == '\n' || this == '\r'
 fun tokenizeWhitespace(str: LookaheadIterator<Char>) = str[0].takeIf(Char::isWhitespace)
         ?.let { WhitespaceOrCommentToken }
         ?.also { str.drop(1) }
@@ -124,9 +125,9 @@ private fun isIdentifierTail(it: Char) = isIdentifierHead(it) || it in '0'..'9'
 class IdentifierToken(name: String) : Token(name)
 @Suppress("UNCHECKED_CAST")
 fun tokenizeIdentifier(str: LookaheadIterator<Char>) = str[0].takeIf { isIdentifierHead(it) }?.let {
-    var string = ""
+    val string = StringBuilder()
     while (isIdentifierTail(str[0])) {
-        string += str.next()
+        string.append(str.next())
     }
-    IdentifierToken(string)
+    IdentifierToken(string.toString())
 }

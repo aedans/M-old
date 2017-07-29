@@ -229,7 +229,7 @@ fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpre
             val expression = when (it.size) {
                 1 -> throw Exception("Cannot call function with no arguments")
                 2 -> it[0].toIRExpression(symbolTable)
-                else -> it.take(it.size - 1).toConsTree().toIRExpression(symbolTable)
+                else -> it.take(it.size - 1).iterator().toConsTree().toIRExpression(symbolTable)
             }
             val arg = it.last().toIRExpression(symbolTable)
             InvokeIRExpression(expression, arg)
