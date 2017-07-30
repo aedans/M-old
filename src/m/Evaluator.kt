@@ -28,13 +28,8 @@ class Stack {
         stack[location] = any
     }
 
-    fun push(any: Any){
-        stack.add(any)
-    }
-
-    fun pop() {
-        stack.removeAt(stack.size - 1)
-    }
+    fun push(any: Any) = stack.add(any)
+    fun pop() = stack.removeAt(stack.size - 1)
 }
 
 class Heap {
@@ -55,9 +50,7 @@ data class Memory(val stack: Stack, val heap: Heap)
 
 fun IdentifierIRExpression.evaluate(memory: Memory) = memoryLocation.get(memory)
 
-fun DefIRExpression.evaluate(memory: Memory) {
-    location.set(memory, expression.eval(memory))
-}
+fun DefIRExpression.evaluate(memory: Memory) = location.set(memory, expression.eval(memory))
 
 fun LambdaIRExpression.evaluate(memory: Memory) = lambda(
         memory,

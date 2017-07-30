@@ -17,7 +17,6 @@ object Repl : Runnable {
 
     private tailrec fun run(environment: RuntimeEnvironment,
                             irExpressionIterator: Iterator<IRExpression> = ReplStream(System.`in`, System.out)
-                                    .lookaheadIterator()
                                     .toIR(environment)) {
         val success = try {
             irExpressionIterator.next().eval(environment.memory).takeIf { it != Unit }?.also { println(it) }

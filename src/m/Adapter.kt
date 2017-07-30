@@ -57,4 +57,4 @@ fun Any.toConsTree(): Any = when (this) {
     is Iterator<*> -> this.toConsTree()
     else -> this
 }
-fun Iterator<*>.toConsTree(): Any = if (!hasNext()) Nil else ConsCell(next()!!.toConsTree(), toConsTree())
+fun Iterator<Any>.toConsTree(): Any = if (!hasNext()) Nil else ConsCell(next().toConsTree(), toConsTree())
