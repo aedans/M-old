@@ -88,7 +88,7 @@ fun parseTilde(tokens: LookaheadIterator<Token>) = parseReaderMacro(tokens, Tild
 }
 
 typealias CParenExpression = CParenToken
-fun parseSExpression(tokens: LookaheadIterator<Token>) = when (tokens[0]) {
+fun parseSExpression(tokens: LookaheadIterator<Token>): Any? = when (tokens[0]) {
     OParenToken -> tokens
             .also { tokens.drop(1) }
             .parse()

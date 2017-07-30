@@ -11,7 +11,7 @@ import java.util.ArrayList;
 @SuppressWarnings("unchecked")
 public final class Intrinsics {
     public static Object evaluateInvoke(InvokeIRExpression expression, Memory memory) {
-        return (((Function1<Object, Object>) expression.expression.eval(memory))).invoke(expression.arg.eval(memory));
+        return (((Function1) expression.expression.eval(memory))).invoke(expression.arg.eval(memory));
     }
 
     public static Object evaluateIdentifier(IdentifierIRExpression expression, Memory memory) {

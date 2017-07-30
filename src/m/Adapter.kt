@@ -22,11 +22,12 @@ inline fun <reified I1, reified I2, reified O> mFunction(
     override fun toString() = "(${I1::class.qualifiedName}) -> (${I2::class.qualifiedName}) -> ${O::class.simpleName}"
 }
 
-object Nil {
+interface Cons
+object Nil : Cons {
     override fun toString() = "nil"
 }
 
-class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) : Iterable<Any> {
+class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) : Iterable<Any>, Cons {
     val size get(): Int = if (cdr === Nil) 1 else (cdr as ConsCell).size + 1
 
     override fun iterator() = object : Iterator<Any> {
@@ -57,4 +58,4 @@ fun Any.toConsTree(): Any = when (this) {
     is Iterator<*> -> this.toConsTree()
     else -> this
 }
-fun Iterator<Any>.toConsTree(): Any = if (!hasNext()) Nil else ConsCell(next().toConsTree(), toConsTree())
+fun Iterator<Any>.toConsTree(): Cons = if (!hasNext()) Nil else ConsCell(next().toConsTree(), toConsTree())
