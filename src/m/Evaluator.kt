@@ -9,6 +9,7 @@ sealed class MemoryLocation {
     abstract fun set(memory: Memory, any: Any)
 
     class HeapPointer(val index: Int) : MemoryLocation() {
+        @Suppress("HasPlatformType")
         override fun get(memory: Memory) = memory.heap[index]
         override fun set(memory: Memory, any: Any) = memory.heap.set(index, any)
         override fun toString() = "*h$index"
@@ -32,23 +33,12 @@ class Stack {
     fun pop() = stack.removeAt(stack.size - 1)
 }
 
-class Heap {
-    val heap = ArrayList<Any>()
-    private fun expand(i: Int) {
-        while (heap.size <= i)
-            heap.add(Nil)
-    }
-
-    operator fun get(location: Int): Any = heap[location]
-    operator fun set(location: Int, obj: Any) {
-        expand(location)
-        heap[location] = obj
-    }
-}
+typealias Heap = Intrinsics.Heap
 
 data class Memory(val stack: Stack, val heap: Heap)
 
-fun IdentifierIRExpression.evaluate(memory: Memory) = memoryLocation.get(memory)
+@Suppress("NOTHING_TO_INLINE", "HasPlatformType")
+inline fun IdentifierIRExpression.evaluate(memory: Memory) = Intrinsics.evaluateIdentifier(this, memory)
 
 fun DefIRExpression.evaluate(memory: Memory) = location.set(memory, expression.eval(memory))
 
@@ -79,6 +69,9 @@ fun IfIRExpression.evaluate(memory: Memory) = if (condition.eval(memory) as Bool
     ifTrue.eval(memory)
 else
     ifFalse.eval(memory)
+
+@Suppress("NOTHING_TO_INLINE", "HasPlatformType")
+inline fun InvokeIRExpression.evaluate(memory: Memory) = Intrinsics.evaluateInvoke(this, memory)
 
 fun QuasiquoteIRExpression.evaluate(memory: Memory): Any {
     var cons: Any = Nil

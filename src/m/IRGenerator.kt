@@ -75,16 +75,30 @@ fun generateNilLiteralIR(expression: Expression) = generateLiteralIR<Nil>(expres
 fun generateStringLiteralIR(expression: Expression) = generateLiteralIR<StringLiteralExpression>(expression)
 fun generateNumberLiteralIR(expression: Expression) = generateLiteralIR<NumberLiteralExpression>(expression)
 
-data class IdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) : IRExpression {
+data class IdentifierIRExpression(val name: String, @JvmField val memoryLocation: MemoryLocation) : IRExpression {
+    @Suppress("HasPlatformType")
     override fun eval(memory: Memory) = evaluate(memory)
     override fun toString() = "$name : $memoryLocation"
+}
+
+data class ConstIdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation.HeapPointer) : IRExpression {
+    var value: Any? = null
+    override fun eval(memory: Memory): Any = value?.let { it } ?: {
+        value = memoryLocation.get(memory)
+        value!!
+    }()
+
+    override fun toString() = "CONST $name : $memoryLocation"
 }
 
 fun generateIdentifierIR(symbolTable: SymbolTable, expression: Expression) = expression
         .takeIfInstance<IdentifierExpression>()
         ?.let {
             val location = symbolTable.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
-            IdentifierIRExpression(it.name, location)
+            when (location) {
+                is MemoryLocation.HeapPointer -> ConstIdentifierIRExpression(it.name, location)
+                else -> IdentifierIRExpression(it.name, location)
+            }
         }
 
 data class DefIRExpression(val name: String, val expression: IRExpression, val location: MemoryLocation) : IRExpression {
@@ -219,7 +233,7 @@ fun generateQuasiquoteIR(table: SymbolTable, expr: Expression) = expr.takeIfInst
 
 data class InvokeIRExpression(@JvmField val expression: IRExpression, @JvmField val arg: IRExpression) : IRExpression {
     @Suppress("HasPlatformType")
-    override fun eval(memory: Memory) = Intrinsics.evaluate(this, memory)
+    override fun eval(memory: Memory) = evaluate(memory)
     override fun toString() = "($expression $arg)"
 }
 
