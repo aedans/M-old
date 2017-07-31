@@ -5,7 +5,7 @@ package m
  */
 
 typealias Expression = Any
-typealias SExpression = ConsCell
+typealias SExpression = ConsList<Expression>
 
 fun Iterator<Token>.parse() = lookaheadIterator().parse()
 fun LookaheadIterator<Token>.parse() = collect { nextExpression() }
@@ -60,7 +60,7 @@ data class QuoteExpression(val cons: Any) {
 }
 
 fun parseApostrophe(tokens: LookaheadIterator<Token>) = parseReaderMacro(tokens, ApostropheToken) {
-    QuoteExpression(it.toConsTree())
+    QuoteExpression(it.toConsListOrSelf())
 }
 
 data class QuasiquoteExpression(val cons: Any) {
@@ -68,7 +68,7 @@ data class QuasiquoteExpression(val cons: Any) {
 }
 
 fun parseBacktick(tokens: LookaheadIterator<Token>) = parseReaderMacro(tokens, BacktickToken) {
-    QuasiquoteExpression(it.toConsTree())
+    QuasiquoteExpression(it.toConsListOrSelf())
 }
 
 data class UnquoteExpression(val cons: Any) {
@@ -76,7 +76,7 @@ data class UnquoteExpression(val cons: Any) {
 }
 
 fun parseComma(tokens: LookaheadIterator<Token>) = parseReaderMacro(tokens, CommaToken) {
-    UnquoteExpression(it.toConsTree())
+    UnquoteExpression(it.toConsListOrSelf())
 }
 
 data class UnquoteSplicingExpression(val cons: Any) {
@@ -84,7 +84,7 @@ data class UnquoteSplicingExpression(val cons: Any) {
 }
 
 fun parseTilde(tokens: LookaheadIterator<Token>) = parseReaderMacro(tokens, TildeToken) {
-    UnquoteSplicingExpression(it.toConsTree())
+    UnquoteSplicingExpression(it.toConsListOrSelf())
 }
 
 typealias CParenExpression = CParenToken
@@ -95,7 +95,7 @@ fun parseSExpression(tokens: LookaheadIterator<Token>): Any? = when (tokens[0]) 
             .asSequence()
             .takeWhile { it !== CParenExpression }
             .iterator()
-            .toConsTree()
+            .toConsListOrSelf()
     CParenToken -> CParenExpression
             .also { tokens.drop(1) }
     else -> null

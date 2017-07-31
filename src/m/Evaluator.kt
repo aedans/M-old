@@ -74,7 +74,7 @@ else
 inline fun InvokeIRExpression.evaluate(memory: Memory) = Intrinsics.evaluateInvoke(this, memory)
 
 fun QuasiquoteIRExpression.evaluate(memory: Memory): Any {
-    var cons: Any = Nil
+    var cons: ConsList<*> = Nil
     irExpressions.forEach {
         when (it) {
             is UnquoteIRExpression -> {
@@ -82,7 +82,7 @@ fun QuasiquoteIRExpression.evaluate(memory: Memory): Any {
             }
             is UnquoteSplicingIRExpression -> {
                 it.eval(memory).let {
-                    if (it is ConsCell) {
+                    if (it is ConsList<*>) {
                         it.reversed().forEach {
                             cons = ConsCell(it, cons)
                         }

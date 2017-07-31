@@ -32,9 +32,9 @@ fun getDefaultEnvironment(
     env.setVar("macro", mFunction<MFunction, Macro> { mMacro(it) })
     env.setVar("macroexpand", mMacro { QuoteExpression((it as SExpression).car.expand(env)) })
 
-    env.setVar("cons", mFunction<Any, Any, ConsCell> { car, cdr -> ConsCell(car, cdr) })
-    env.setVar("car", mFunction<ConsCell, Any> { it.car })
-    env.setVar("cdr", mFunction<ConsCell, Any> { it.cdr })
+    env.setVar("cons", mFunction<Any, ConsList<Any>, ConsList<Any>> { car, cdr -> ConsCell(car, cdr) })
+    env.setVar("car", mFunction<ConsList<Any>, Any> { it.car })
+    env.setVar("cdr", mFunction<ConsList<Any>, Any> { it.cdr })
 
     env.setVar("!", mFunction<Boolean, Boolean> { !it })
     env.setVar("|", mFunction<Boolean, Boolean, Boolean> { x, y -> x || y })

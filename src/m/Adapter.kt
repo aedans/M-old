@@ -22,40 +22,55 @@ inline fun <reified I1, reified I2, reified O> mFunction(
     override fun toString() = "(${I1::class.qualifiedName}) -> (${I2::class.qualifiedName}) -> ${O::class.simpleName}"
 }
 
-interface Cons
-object Nil : Cons {
+interface ConsList<out T : Any> : Iterable<T> {
+    val size: Int
+    val car: T
+    val cdr: ConsList<T>
+    operator fun get(i: Int): T
+}
+
+object Nil : ConsList<Nothing> {
+    override val size = 0
+    override fun iterator() = emptyList<Nothing>().iterator()
+    override fun get(i: Int) = throw IndexOutOfBoundsException()
+    override val car get() = throw IndexOutOfBoundsException()
+    override val cdr get() = throw IndexOutOfBoundsException()
     override fun toString() = "nil"
 }
 
-class ConsCell(@JvmField val car: Any, @JvmField val cdr: Any) : Iterable<Any>, Cons {
-    val size get(): Int = if (cdr === Nil) 1 else (cdr as ConsCell).size + 1
+class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) : ConsList<T> {
+    override val size get(): Int = (cdr as ConsList<*>).size + 1
 
-    override fun iterator() = object : Iterator<Any> {
+    override fun iterator() = object : Iterator<T> {
         var it: Any = this@ConsCell
         override fun hasNext() = it !== Nil
-        override fun next(): Any {
-            val it = it as ConsCell
+        @Suppress("UNCHECKED_CAST")
+        override fun next(): T {
+            val it = it as ConsList<T>
             val next = it.car
             this.it = it.cdr
             return next
         }
     }
 
-    operator fun get(i: Int): Any = when (i) {
+    override operator fun get(i: Int): T = when (i) {
         0 -> car
-        else -> (cdr as ConsCell)[i - 1]
+        else -> cdr[i - 1]
     }
 
     override fun toString() = toString(true)
     fun toString(b: Boolean): String = if (b) "(${this.toString(false)})" else when (cdr) {
         Nil -> "$car"
-        is ConsCell -> "$car ${cdr.toString(false)}"
+        is ConsCell<*> -> "$car ${cdr.toString(false)}"
         else -> "($car . $cdr)"
     }
 }
 
-fun Any.toConsTree(): Any = when (this) {
-    is Iterator<*> -> this.toConsTree()
+@Suppress("UNCHECKED_CAST")
+fun Any.toConsListOrSelf(): Any = when (this) {
+    is Iterator<*> -> (this as Iterator<Any>).toConsList()
     else -> this
 }
-fun Iterator<Any>.toConsTree(): Cons = if (!hasNext()) Nil else ConsCell(next().toConsTree(), toConsTree())
+
+fun <T : Any> Iterable<T>.toConsList() = iterator().toConsList()
+fun <T : Any> Iterator<T>.toConsList(): ConsList<T> = if (!hasNext()) Nil else ConsCell(next(), toConsList())

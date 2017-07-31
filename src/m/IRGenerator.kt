@@ -65,7 +65,7 @@ private inline fun generateUniqueSExpressionIR(
         crossinline func: (SymbolTable, SExpression) -> IRExpression
 ) = expression.takeIfInstance<SExpression>()
         ?.takeIf { it[0].let { it is IdentifierExpression && it.name == name } }
-        ?.let { func(symbolTable, it.cdr as SExpression) }
+        ?.let { func(symbolTable, it.cdr) }
 
 object NilLiteralIRExpression : LiteralIRExpression(Nil)
 fun generateNilLiteralIR(expression: Expression) = generateLiteralIR<Nil>(expression, NilLiteralIRExpression)
@@ -150,7 +150,7 @@ fun generateLambdaIR(
         symbolTable: SymbolTable, expr: Expression
 ) = generateUniqueSExpressionIR(symbolTable, expr, "lambda") { environment, sExpression ->
     @Suppress("UNCHECKED_CAST")
-    val argNames = (sExpression[0] as ConsCell).map { (it as IdentifierExpression).name }
+    val argNames = (sExpression[0] as ConsList<Expression>).map { (it as IdentifierExpression).name }
     val expressions = sExpression.drop(1)
     generateLambdaIRExpression(environment, argNames, expressions)
 }
@@ -216,11 +216,11 @@ data class UnquoteSplicingIRExpression(val irExpression: IRExpression) : IRExpre
 fun generateQuasiquoteIR(table: SymbolTable, expr: Expression) = expr.takeIfInstance<QuasiquoteExpression>()?.let {
     when (it.cons) {
         Nil -> NilLiteralIRExpression
-        is ConsCell -> QuasiquoteIRExpression(it.cons.map {
+        is ConsList<*> -> QuasiquoteIRExpression(it.cons.map {
             when (it) {
                 is UnquoteExpression -> UnquoteIRExpression(it.cons.toIRExpression(table))
                 is UnquoteSplicingExpression -> UnquoteSplicingIRExpression(it.cons.toIRExpression(table))
-                is ConsCell -> UnquoteIRExpression(QuasiquoteExpression(it).toIRExpression(table))
+                is ConsList<*> -> UnquoteIRExpression(QuasiquoteExpression(it).toIRExpression(table))
                 else -> it
             }
         }.reversed())
@@ -239,7 +239,7 @@ fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpre
         ?.let {
             val expression = when (it.size) {
                 1, 2 -> it[0].toIRExpression(symbolTable)
-                else -> it.take(it.size - 1).iterator().toConsTree().toIRExpression(symbolTable)
+                else -> it.take(it.size - 1).toConsList().toIRExpression(symbolTable)
             }
             val arg = when (it.size) {
                 1 -> NilLiteralIRExpression
