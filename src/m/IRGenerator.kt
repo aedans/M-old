@@ -36,7 +36,6 @@ fun LookaheadIterator<Expression>.generateIR(symbolTable: SymbolTable): Iterator
 }
 
 fun Expression.toIRExpression(symbolTable: SymbolTable): IRExpression = null ?:
-        generateUnitLiteralIR(this) ?:
         generateNilLiteralIR(this) ?:
         generateStringLiteralIR(this) ?:
         generateNumberLiteralIR(this) ?:
@@ -68,8 +67,6 @@ private inline fun generateUniqueSExpressionIR(
         ?.takeIf { it[0].let { it is IdentifierExpression && it.name == name } }
         ?.let { func(symbolTable, it.cdr as SExpression) }
 
-object UnitLiteralIRExpression : LiteralIRExpression(Unit)
-fun generateUnitLiteralIR(expression: Expression) = generateLiteralIR<Unit>(expression, UnitLiteralIRExpression)
 object NilLiteralIRExpression : LiteralIRExpression(Nil)
 fun generateNilLiteralIR(expression: Expression) = generateLiteralIR<Nil>(expression, NilLiteralIRExpression)
 fun generateStringLiteralIR(expression: Expression) = generateLiteralIR<StringLiteralExpression>(expression)
@@ -195,7 +192,7 @@ fun generateIfIR(
     IfIRExpression(
             condition.toIRExpression(environment),
             ifTrue.toIRExpression(environment),
-            ifFalse?.toIRExpression(environment) ?: UnitIRExpression
+            ifFalse?.toIRExpression(environment) ?: NilLiteralIRExpression
     )
 }
 
@@ -241,10 +238,12 @@ fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpre
         .takeIfInstance<SExpression>()
         ?.let {
             val expression = when (it.size) {
-                1 -> throw Exception("Cannot call function with no arguments")
-                2 -> it[0].toIRExpression(symbolTable)
+                1, 2 -> it[0].toIRExpression(symbolTable)
                 else -> it.take(it.size - 1).iterator().toConsTree().toIRExpression(symbolTable)
             }
-            val arg = it.last().toIRExpression(symbolTable)
+            val arg = when (it.size) {
+                1 -> NilLiteralIRExpression
+                else -> it.last().toIRExpression(symbolTable)
+            }
             InvokeIRExpression(expression, arg)
         }

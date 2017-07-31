@@ -147,6 +147,15 @@ val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
 (let hello "Hello, world!" (print stdout hello))
 """
 
+val helloWorld11 by TestType.SuccessTest("Hello, world!") src """
+(def proc
+  (macro
+    (lambda (x)
+      `(lambda (_) ~x))))
+
+((proc (println stdout "Hello, world!"))
+"""
+
 val quote by TestType.SuccessTest("(nil 1 2 3 (4 5 6))") src """
 (print stdout '(() 1 2 3 (4 5 6)))
 """
