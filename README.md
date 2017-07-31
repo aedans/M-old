@@ -60,7 +60,7 @@ Each expression in the list preceded by a tilde will be evaluated and merged int
 - `|` Takes two arguments, returns true if both arguments are true
 - `&` Takes two arguments, returns true if either argument is true
 - `=` Takes two arguments, returns true if both arguments are equal
-- `print` Takes an output stream and a char, writes the char to the output stream
+- `write` Takes an output stream and a char, writes the char to the output stream
 - `read` Takes an input stream, returns the next char in the input stream
 - `stdout` The standard output stream
 - `stderr` The standard error stream

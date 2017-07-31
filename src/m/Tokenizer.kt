@@ -28,6 +28,7 @@ private fun LookaheadIterator<Char>.nextToken() = null ?:
         tokenizeComma(this) ?:
         tokenizeTilde(this) ?:
         tokenizeWhitespace(this) ?:
+        tokenizeComment(this) ?:
         tokenizeStringLiteral(this) ?:
         tokenizeNumberLiteral(this) ?:
         tokenizeIdentifier(this) ?:
@@ -59,6 +60,11 @@ fun Char.isWhitespace() = this == ' ' || this == '\t' || this == '\n' || this ==
 fun tokenizeWhitespace(str: LookaheadIterator<Char>) = str[0].takeIf(Char::isWhitespace)
         ?.let { WhitespaceOrCommentToken }
         ?.also { str.drop(1) }
+
+fun tokenizeComment(str: LookaheadIterator<Char>): WhitespaceOrCommentToken? = str[0].takeIf { it == ';' }?.let {
+    while (!str.next().let { it == '\n' || it == '\r' });
+    WhitespaceOrCommentToken
+}
 
 class StringLiteralToken(string: String) : Token(string)
 fun tokenizeStringLiteral(str: LookaheadIterator<Char>) = str[0].takeIf { it == '"' }?.let {

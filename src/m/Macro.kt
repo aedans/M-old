@@ -20,6 +20,7 @@ fun Expression.expand(env: RuntimeEnvironment): Expression = takeIfInstance<SExp
                     ?.let { env.getVar(it.name) }
                     ?.takeIfInstance<Macro>()
                     ?.let { it(expr.cdr) }
+                    ?.expand(env)
                     ?: expr
         }
         ?: this
