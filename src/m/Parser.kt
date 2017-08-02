@@ -11,6 +11,7 @@ fun Iterator<Token>.parse() = lookaheadIterator().parse()
 fun LookaheadIterator<Token>.parse() = collect { nextExpression() }
 fun LookaheadIterator<Token>.nextExpression(): Expression = null ?:
         parseIdentifier(this) ?:
+        parseCharLiteral(this) ?:
         parseStringLiteral(this) ?:
         parseNumberLiteral(this) ?:
         parseApostrophe(this) ?:
@@ -26,6 +27,12 @@ class IdentifierExpression(val name: String) {
 
 fun parseIdentifier(tokens: LookaheadIterator<Token>) = (tokens[0] as? IdentifierToken)?.let {
     IdentifierExpression(tokens[0].text.toString().also { tokens.drop(1) })
+}
+
+typealias CharLiteralExpression = Char
+fun parseCharLiteral(tokens: LookaheadIterator<Token>) = tokens[0].takeIfInstance<CharLiteralToken>()?.let {
+    tokens.drop(1)
+    it.char
 }
 
 typealias StringLiteralExpression = String

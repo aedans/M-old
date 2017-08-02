@@ -37,6 +37,7 @@ fun LookaheadIterator<Expression>.generateIR(symbolTable: SymbolTable): Iterator
 
 fun Expression.toIRExpression(symbolTable: SymbolTable): IRExpression = null ?:
         generateNilLiteralIR(this) ?:
+        generateCharLiteralIR(this) ?:
         generateStringLiteralIR(this) ?:
         generateNumberLiteralIR(this) ?:
         generateIdentifierIR(symbolTable, this) ?:
@@ -69,6 +70,7 @@ private inline fun generateUniqueSExpressionIR(
 
 object NilLiteralIRExpression : LiteralIRExpression(Nil)
 fun generateNilLiteralIR(expression: Expression) = generateLiteralIR<Nil>(expression, NilLiteralIRExpression)
+fun generateCharLiteralIR(expression: Expression) = generateLiteralIR<CharLiteralExpression>(expression)
 fun generateStringLiteralIR(expression: Expression) = generateLiteralIR<StringLiteralExpression>(expression)
 fun generateNumberLiteralIR(expression: Expression) = generateLiteralIR<NumberLiteralExpression>(expression)
 
