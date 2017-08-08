@@ -78,7 +78,10 @@ val helloWorld2 by TestType.SuccessTest("Hello, world!") src """
 
 val helloWorld3 by TestType.SuccessTest("Hello, world!") src """
 (def hello "Hello, world!")
-(def test (lambda (x) (print stdout x)))
+(def test
+  (lambda (x)
+    (print stdout x)))
+
 (test hello)
 """
 
@@ -88,18 +91,35 @@ val helloWorld4 by TestType.SuccessTest("Hello, world!") src """
 (def world "world")
 (def exclamation "!")
 (def test (lambda (x) (print stdout x)))
-(def print4 (lambda (w x y z) (test w) (test x) (test y) (test z)))
+(def print4
+  (lambda (w x y z)
+    (test w)
+    (test x)
+    (test y)
+    (test z)))
+
 (print4 hello comma world exclamation)
 """
 
-// Not strictly necessary, since helloWorld4 should expand to this
 val helloWorld5 by TestType.SuccessTest("Hello, world!") src """
 (def hello "Hello")
 (def comma ", ")
 (def world "world")
 (def exclamation "!")
-(def test (lambda (x) (print stdout x)))
-(def print4 (lambda (w) (lambda (x) (lambda (y) (lambda (z) (test w) (test x) (test y) (test z))))))
+(def test
+  (lambda (x)
+    (print stdout x)))
+
+(def print4
+  (lambda (w)
+    (lambda (x)
+      (lambda (y)
+        (lambda (z)
+          (test w)
+          (test x)
+          (test y)
+          (test z))))))
+
 (print4 hello comma world exclamation)
 """
 
@@ -225,7 +245,21 @@ val fibonacci by TestType.SuccessTest("""
 9 : 34
 10 : 55
 """) src """
-(def fib (lambda (x) (if (= x 0) 0 (if (= x 1) 1 (+ (fib (- x 1)) (fib (- x 2)))))))
-(def loop (lambda (x f) (if (= x 0) f (loop (- x 1) f)) (f x)))
-(loop 10 (lambda (x) (print stdout x) (print stdout " : ") (println stdout (fib x))))
+(def fib
+  (lambda (x)
+    (if (= x 0)
+      0
+    (if (= x 1)
+      1
+    (+ (fib (- x 1)) (fib (- x 2)))))))
+
+(def loop
+  (lambda (x f)
+    (if (= x 0) f (loop (- x 1) f)) (f x)))
+
+(loop 10
+  (lambda (x)
+    (print stdout x)
+    (print stdout " : ")
+    (println stdout (fib x))))
 """

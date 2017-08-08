@@ -24,7 +24,6 @@ interface IRExpression {
     fun eval(memory: Memory): Any
 }
 
-object UnitIRExpression : LiteralIRExpression(Unit)
 open class LiteralIRExpression(val literal: Any) : IRExpression {
     override fun eval(memory: Memory) = literal
     override fun toString() = "$literal"

@@ -67,7 +67,7 @@ class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) 
 }
 
 @Suppress("UNCHECKED_CAST")
-fun Any.toConsListOrSelf(): Any = when (this) {
+fun Any.toConsListOrSelf() = when (this) {
     is Iterator<*> -> (this as Iterator<Any>).toConsList()
     else -> this
 }
