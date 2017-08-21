@@ -43,10 +43,26 @@ fun getDefaultEnvironment(
     env.setVar("<", mFunction<Int, Int, Boolean> { x, y -> x < y })
     env.setVar(">", mFunction<Int, Int, Boolean> { x, y -> x > y })
 
-    env.setVar("+", mFunction<Int, Int, Int> { x, y -> x + y })
-    env.setVar("-", mFunction<Int, Int, Int> { x, y -> x - y })
-    env.setVar("*", mFunction<Int, Int, Int> { x, y -> x * y })
-    env.setVar("/", mFunction<Int, Int, Int> { x, y -> x / y })
+    env.setVar("+i", mFunction<Int, Int, Int>(Int::plus))
+    env.setVar("-i", mFunction<Int, Int, Int>(Int::minus))
+    env.setVar("*i", mFunction<Int, Int, Int>(Int::times))
+    env.setVar("/i", mFunction<Int, Int, Int>(Int::div))
+    env.setVar("+l", mFunction<Long, Long, Long>(Long::plus))
+    env.setVar("-l", mFunction<Long, Long, Long>(Long::minus))
+    env.setVar("*l", mFunction<Long, Long, Long>(Long::times))
+    env.setVar("/l", mFunction<Long, Long, Long>(Long::div))
+    env.setVar("+f", mFunction<Float, Float, Float>(Float::plus))
+    env.setVar("-f", mFunction<Float, Float, Float>(Float::minus))
+    env.setVar("*f", mFunction<Float, Float, Float>(Float::times))
+    env.setVar("/f", mFunction<Float, Float, Float>(Float::div))
+    env.setVar("+d", mFunction<Double, Double, Double>(Double::plus))
+    env.setVar("-d", mFunction<Double, Double, Double>(Double::minus))
+    env.setVar("*d", mFunction<Double, Double, Double>(Double::times))
+    env.setVar("/d", mFunction<Double, Double, Double>(Double::div))
+
+    listOf("+", "-", "*", "/").forEach {
+        env.setVar(it, env.getVar(it + "i")!!)
+    }
 
     env.setVar("stdin", `in`)
     env.setVar("stdout", out)

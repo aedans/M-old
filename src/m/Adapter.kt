@@ -19,7 +19,7 @@ inline fun <reified I1, reified I2, reified O> mFunction(
         crossinline mFunction: (I1, I2) -> O
 ) = object : (I1) -> (I2) -> O {
     override fun invoke(p1: I1): (I2) -> O = mFunction { i1: I2 -> mFunction(p1, i1) }
-    override fun toString() = "(${I1::class.qualifiedName}) -> (${I2::class.qualifiedName}) -> ${O::class.simpleName}"
+    override fun toString() = "(${I1::class.qualifiedName}) -> (${I2::class.qualifiedName}) -> ${O::class.qualifiedName}"
 }
 
 interface ConsList<out T : Any> : Iterable<T> {
