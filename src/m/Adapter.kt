@@ -6,7 +6,7 @@ package m
 
 typealias MFunction = (Any) -> Any
 
-fun mMacro(mMacro: (Expression) -> Expression) = Macro(mMacro)
+fun mMacro(mFunction: MFunction) = Macro(mFunction)
 
 inline fun <reified I, reified O> mFunction(
         crossinline mFunction: (I) -> O
@@ -44,8 +44,8 @@ class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) 
     override fun iterator() = object : Iterator<T> {
         var it: Any = this@ConsCell
         override fun hasNext() = it !== Nil
-        @Suppress("UNCHECKED_CAST")
         override fun next(): T {
+            @Suppress("UNCHECKED_CAST")
             val it = it as ConsList<T>
             val next = it.car
             this.it = it.cdr
@@ -59,16 +59,15 @@ class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) 
     }
 
     override fun toString() = toString(true)
-    fun toString(b: Boolean): String = if (b) "(${this.toString(false)})" else when (cdr) {
+    private fun toString(b: Boolean): String = if (b) "(${this.toString(false)})" else when (cdr) {
         Nil -> "$car"
         is ConsCell<*> -> "$car ${cdr.toString(false)}"
         else -> "($car . $cdr)"
     }
 }
 
-@Suppress("UNCHECKED_CAST")
 fun Any.toConsListOrSelf() = when (this) {
-    is Iterator<*> -> (this as Iterator<Any>).toConsList()
+    is Iterator<*> -> @Suppress("UNCHECKED_CAST") (this as Iterator<Any>).toConsList()
     else -> this
 }
 

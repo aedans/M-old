@@ -18,7 +18,7 @@ fun Expression.expand(env: RuntimeEnvironment): Expression = takeIfInstance<SExp
             expr[0].takeIfInstance<IdentifierExpression>()
                     ?.let { env.getVar(it.name) }
                     ?.takeIfInstance<Macro>()
-                    ?.let { it(expr.cdr) }
+                    ?.let { macro -> macro(expr.cdr) }
                     ?.expand(env)
                     ?: expr
         }

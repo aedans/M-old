@@ -14,7 +14,7 @@ interface SymbolTable {
 
 class IRSymbolTable(val container: SymbolTable? = null) : SymbolTable {
     var allocationIndex = 0
-    val vars = HashMap<String, MemoryLocation?>()
+    private val vars = HashMap<String, MemoryLocation?>()
     override fun getLocation(name: String) = vars[name] ?: container?.getLocation(name)
     override fun setLocation(name: String, location: MemoryLocation?) = vars.set(name, location)
     override fun allocateLocation(name: String) = MemoryLocation.HeapPointer(allocationIndex++)
@@ -126,17 +126,17 @@ data class LambdaIRExpression(
 }
 
 class ClosedSymbolTable(val symbolTable: SymbolTable) : SymbolTable {
-    val vars = mutableMapOf<String, MemoryLocation.StackPointer>()
+    private val vars = mutableMapOf<String, MemoryLocation.StackPointer>()
     val closures = mutableListOf<Pair<String, MemoryLocation>>()
 
     override fun getLocation(name: String): MemoryLocation? {
         return vars[name] ?: symbolTable.getLocation(name)?.let {
-            if (it is MemoryLocation.HeapPointer) it else {
+            if (it is MemoryLocation.StackPointer) {
                 closures.add(name to it)
                 val ptr = MemoryLocation.StackPointer(closures.size)
                 vars.put(name, ptr)
                 ptr
-            }
+            } else it
         }
     }
 
@@ -150,7 +150,6 @@ class ClosedSymbolTable(val symbolTable: SymbolTable) : SymbolTable {
 fun generateLambdaIR(
         symbolTable: SymbolTable, expr: Expression
 ) = generateUniqueSExpressionIR(symbolTable, expr, "lambda") { environment, sExpression ->
-    @Suppress("UNCHECKED_CAST")
     val argNames = (sExpression[0] as ConsList<Expression>).map { (it as IdentifierExpression).name }
     val expressions = sExpression.drop(1)
     generateLambdaIRExpression(environment, argNames, expressions)

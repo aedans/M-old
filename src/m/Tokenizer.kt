@@ -136,7 +136,6 @@ private fun isIdentifierHead(it: Char) = it in 'a'..'z' || it in 'A'..'Z' || it 
 private fun isIdentifierTail(it: Char) = isIdentifierHead(it) || it in '0'..'9'
 
 class IdentifierToken(name: String) : Token(name)
-@Suppress("UNCHECKED_CAST")
 fun tokenizeIdentifier(str: LookaheadIterator<Char>) = str[0].takeIf { isIdentifierHead(it) }?.let {
     val string = StringBuilder()
     while (isIdentifierTail(str[0])) {

@@ -18,7 +18,7 @@ data class RuntimeEnvironment(val symbolTable: SymbolTable, val memory: Memory) 
     }
 }
 
-fun getDefaultEnvironment(
+fun getDefaultRuntimeEnvironment(
         `in`: InputStream = System.`in`,
         out: OutputStream = System.out,
         err: OutputStream = System.err
@@ -29,19 +29,19 @@ fun getDefaultEnvironment(
     env.setVar("false", false)
     env.setVar("nil", Nil)
 
-    env.setVar("macro", mFunction<MFunction, Macro> { mMacro(it) })
+    env.setVar("macro", mFunction(::mMacro))
     env.setVar("macroexpand", mMacro { QuoteExpression((it as SExpression).car.expand(env)) })
 
-    env.setVar("cons", mFunction<Any, ConsList<Any>, ConsList<Any>> { car, cdr -> ConsCell(car, cdr) })
-    env.setVar("car", mFunction<ConsList<Any>, Any> { it.car })
-    env.setVar("cdr", mFunction<ConsList<Any>, Any> { it.cdr })
+    env.setVar("cons", mFunction<Any, ConsList<Any>, ConsList<Any>>(::ConsCell))
+    env.setVar("car", mFunction(ConsList<Any>::car))
+    env.setVar("cdr", mFunction(ConsList<Any>::cdr))
 
-    env.setVar("!", mFunction<Boolean, Boolean> { !it })
-    env.setVar("|", mFunction<Boolean, Boolean, Boolean> { x, y -> x || y })
-    env.setVar("&", mFunction<Boolean, Boolean, Boolean> { x, y -> x && y })
-    env.setVar("=", mFunction<Any, Any, Boolean> { x, y -> x == y })
-    env.setVar("<", mFunction<Int, Int, Boolean> { x, y -> x < y })
-    env.setVar(">", mFunction<Int, Int, Boolean> { x, y -> x > y })
+    env.setVar("!", mFunction(Boolean::not))
+    env.setVar("|", mFunction(Boolean::or))
+    env.setVar("&", mFunction(Boolean::and))
+    env.setVar("=", mFunction(Any::equals))
+    env.setVar("<", mFunction { x: Int, y: Int -> x < y })
+    env.setVar(">", mFunction { x: Int, y: Int -> x > y })
 
     env.setVar("+i", mFunction<Int, Int, Int>(Int::plus))
     env.setVar("-i", mFunction<Int, Int, Int>(Int::minus))

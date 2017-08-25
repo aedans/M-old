@@ -4,7 +4,7 @@ package m
  * Created by Aedan Smith.
  */
 
-inline fun <reified T : Any> Any.takeIfInstance(): T? = if (this is T) this else null
+inline fun <reified T : Any> Any.takeIfInstance(): T? = takeIf { it is T } as T?
 
 fun Iterator<Char>.toIR(env: RuntimeEnvironment) = this
         .tokenize()

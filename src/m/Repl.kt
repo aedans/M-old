@@ -1,9 +1,7 @@
 package m
 
 import java.io.InputStream
-import java.io.OutputStream
 import java.io.PrintStream
-import kotlin.reflect.KClass
 
 /**
  * Created by Aedan Smith.
@@ -11,8 +9,7 @@ import kotlin.reflect.KClass
 
 object Repl : Runnable {
     override fun run() {
-        val env = getDefaultEnvironment()
-        run(env)
+        run(getDefaultRuntimeEnvironment())
     }
 
     private tailrec fun run(environment: RuntimeEnvironment,

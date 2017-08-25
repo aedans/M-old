@@ -3,7 +3,6 @@
 import m.*
 import java.io.OutputStream
 import java.io.PrintStream
-import javax.xml.stream.events.Characters
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
@@ -47,7 +46,7 @@ fun main(args: Array<String>) {
             when (type) {
                 is TestType.SuccessTest -> {
                     val output = StringOutputStream()
-                    val env = getDefaultEnvironment(out = PrintStream(output))
+                    val env = getDefaultRuntimeEnvironment(out = PrintStream(output))
 
                     src.iterator().interpret(env)
 

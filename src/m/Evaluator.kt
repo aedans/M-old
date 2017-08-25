@@ -8,14 +8,14 @@ sealed class MemoryLocation {
     abstract fun get(memory: Memory): Any
     abstract fun set(memory: Memory, any: Any)
 
-    class HeapPointer(val index: Int) : MemoryLocation() {
+    class HeapPointer(private val index: Int) : MemoryLocation() {
         @Suppress("HasPlatformType")
         override fun get(memory: Memory) = memory.heap[index]
         override fun set(memory: Memory, any: Any) = memory.heap.set(index, any)
         override fun toString() = "*h$index"
     }
 
-    class StackPointer(val index: Int) : MemoryLocation() {
+    class StackPointer(private val index: Int) : MemoryLocation() {
         override fun get(memory: Memory) = memory.stack[index]
         override fun set(memory: Memory, any: Any) = memory.stack.set(index, any)
         override fun toString() = "*s$index"
@@ -23,7 +23,7 @@ sealed class MemoryLocation {
 }
 
 class Stack {
-    val stack = ArrayList<Any>()
+    private val stack = ArrayList<Any>()
     operator fun get(location: Int) = stack[stack.size - 1 - location]
     operator fun set(location: Int, any: Any) {
         stack[location] = any
@@ -51,8 +51,7 @@ fun LambdaIRExpression.evaluate(memory: Memory) = lambda(
 
 private inline fun <T> List<T>.mapToArray(func: (T) -> Any): Array<Any> {
     var index = 0
-    val array = Array(size) { func(this[index++]) }
-    return array
+    return Array(size) { func(this[index++]) }
 }
 
 fun lambda(memory: Memory, closures: Array<Any>, value: IRExpression, expressions: List<IRExpression>) = { arg: Any ->
