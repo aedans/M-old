@@ -10,7 +10,7 @@ A Minimal Lisp.
 
 Defines a global variable with name identifier and value expression.
 Shadows previously defined variables.
-Only valid at global scope.
+Only valid at the top level.
 
 ```
 (lambda (<identifier>+) <expression>+)
@@ -27,8 +27,8 @@ Closures are supported.
 (if <condition> <then> <else>?)
 ```
 
-If condition is true, evaluates then, otherwise evaluates else.
-If there is no else, and condition is false, evaluates to Unit instead.
+If condition is true, evaluates to then, otherwise evaluates to else.
+If there is no else, and condition is false, evaluates to nil instead.
 
 ```
 '(<expression>+)
