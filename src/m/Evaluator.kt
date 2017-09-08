@@ -11,7 +11,11 @@ sealed class MemoryLocation {
     class HeapPointer(private val index: Int) : MemoryLocation() {
         @Suppress("HasPlatformType")
         override fun get(memory: Memory) = memory.heap[index]
-        override fun set(memory: Memory, any: Any) = memory.heap.set(index, any)
+        override fun set(memory: Memory, any: Any) = run {
+            memory.heap.expand(index)
+            memory.heap[index] = any
+            Unit
+        }
         override fun toString() = "*h$index"
     }
 
@@ -33,7 +37,14 @@ class Stack {
     fun pop() = stack.removeAt(stack.size - 1)
 }
 
-typealias Heap = Intrinsics.Heap
+typealias Heap = ArrayList<Any>
+
+tailrec fun Heap.expand(i: Int) {
+    if (i >= size) {
+        add(Nil)
+        expand(i)
+    }
+}
 
 data class Memory(val stack: Stack, val heap: Heap)
 

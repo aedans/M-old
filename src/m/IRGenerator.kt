@@ -81,10 +81,10 @@ data class IdentifierIRExpression(val name: String, @JvmField val memoryLocation
 
 data class ConstIdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation.HeapPointer) : IRExpression {
     var value: Any? = null
-    override fun eval(memory: Memory): Any = value?.let { it } ?: {
+    override fun eval(memory: Memory): Any = value?.let { it } ?: run {
         value = memoryLocation.get(memory)
         value!!
-    }()
+    }
 
     override fun toString() = "CONST $name : $memoryLocation"
 }
