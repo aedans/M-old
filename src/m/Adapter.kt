@@ -26,36 +26,29 @@ interface ConsList<out T : Any> : Iterable<T> {
     val size: Int
     val car: T
     val cdr: ConsList<T>
-    operator fun get(i: Int): T
 }
 
 object Nil : ConsList<Nothing> {
     override val size = 0
     override fun iterator() = emptyList<Nothing>().iterator()
-    override fun get(i: Int) = throw IndexOutOfBoundsException()
     override val car get() = throw IndexOutOfBoundsException()
     override val cdr get() = throw IndexOutOfBoundsException()
     override fun toString() = "nil"
 }
 
 class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) : ConsList<T> {
-    override val size get(): Int = (cdr as ConsList<*>).size + 1
+    override val size get(): Int = cdr.size + 1
 
     override fun iterator() = object : Iterator<T> {
-        var it: Any = this@ConsCell
+        private var it: ConsList<T> = this@ConsCell
         override fun hasNext() = it !== Nil
         override fun next(): T {
             @Suppress("UNCHECKED_CAST")
-            val it = it as ConsList<T>
+            val it = it
             val next = it.car
             this.it = it.cdr
             return next
         }
-    }
-
-    override operator fun get(i: Int): T = when (i) {
-        0 -> car
-        else -> cdr[i - 1]
     }
 
     override fun toString() = toString(true)
@@ -69,6 +62,11 @@ class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) 
 fun Any.toConsListOrSelf() = when (this) {
     is Iterator<*> -> @Suppress("UNCHECKED_CAST") (this as Iterator<Any>).toConsList()
     else -> this
+}
+
+operator fun <T : Any> ConsList<T>.get(i: Int): T = when (i) {
+    0 -> car
+    else -> cdr[i - 1]
 }
 
 fun <T : Any> Iterable<T>.toConsList() = iterator().toConsList()
