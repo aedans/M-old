@@ -36,7 +36,7 @@ object Nil : ConsList<Nothing> {
     override fun toString() = "nil"
 }
 
-class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) : ConsList<T> {
+data class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) : ConsList<T> {
     override val size get(): Int = cdr.size + 1
 
     override fun iterator() = object : Iterator<T> {
