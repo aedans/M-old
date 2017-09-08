@@ -9,7 +9,8 @@ import java.util.HashMap
 interface SymbolTable {
     fun getLocation(name: String): MemoryLocation?
     fun setLocation(name: String, location: MemoryLocation?)
-    fun allocateLocation(name: String): MemoryLocation
+    fun allocateNewLocation(name: String): MemoryLocation
+    fun allocateLocation(name: String) = getLocation(name) ?: allocateNewLocation(name)
 }
 
 class IRSymbolTable(val container: SymbolTable? = null) : SymbolTable {
@@ -17,11 +18,12 @@ class IRSymbolTable(val container: SymbolTable? = null) : SymbolTable {
     private val vars = HashMap<String, MemoryLocation?>()
     override fun getLocation(name: String) = vars[name] ?: container?.getLocation(name)
     override fun setLocation(name: String, location: MemoryLocation?) = vars.set(name, location)
-    override fun allocateLocation(name: String) = MemoryLocation.HeapPointer(allocationIndex++)
+    override fun allocateNewLocation(name: String) = MemoryLocation.HeapPointer(allocationIndex++)
 }
 
 interface IRExpression {
     fun eval(memory: Memory): Any
+    fun evalT(memory: Memory): Trampoline = Trampoline.Just(eval(memory))
 }
 
 open class LiteralIRExpression(val literal: Any) : IRExpression {
@@ -119,6 +121,7 @@ data class LambdaIRExpression(
         val expressions: List<IRExpression>,
         val value: IRExpression
 ) : IRExpression {
+    val isTailCall = value.hasTailCall()
     override fun eval(memory: Memory) = evaluate(memory)
     override fun toString() = "(lambda $closures " +
             expressions.joinToString(separator = " ") + (if (expressions.isEmpty()) "" else " ") +
@@ -144,7 +147,13 @@ class ClosedSymbolTable(val symbolTable: SymbolTable) : SymbolTable {
         vars.put(name, location as MemoryLocation.StackPointer)
     }
 
-    override fun allocateLocation(name: String) = symbolTable.allocateLocation(name)
+    override fun allocateNewLocation(name: String) = symbolTable.allocateNewLocation(name)
+}
+
+fun IRExpression.hasTailCall(): Boolean = when (this) {
+    is InvokeIRExpression -> true
+    is IfIRExpression -> ifTrue.hasTailCall() || ifFalse.hasTailCall()
+    else -> false
 }
 
 fun generateLambdaIR(
@@ -180,6 +189,7 @@ data class IfIRExpression(
         val ifFalse: IRExpression
 ) : IRExpression {
     override fun eval(memory: Memory) = evaluate(memory)
+    override fun evalT(memory: Memory) = evaluateT(memory)
     override fun toString() = "(if $condition $ifTrue $ifFalse)"
 }
 
@@ -231,6 +241,7 @@ fun generateQuasiquoteIR(table: SymbolTable, expr: Expression) = expr.takeIfInst
 data class InvokeIRExpression(@JvmField val expression: IRExpression, @JvmField val arg: IRExpression) : IRExpression {
     @Suppress("HasPlatformType")
     override fun eval(memory: Memory) = evaluate(memory)
+    override fun evalT(memory: Memory) = evaluateT(memory)
     override fun toString() = "($expression $arg)"
 }
 

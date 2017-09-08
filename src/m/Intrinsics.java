@@ -8,6 +8,10 @@ import kotlin.jvm.functions.Function1;
 
 @SuppressWarnings("unchecked")
 public final class Intrinsics {
+    public static Object evaluateInvoke(Object func, Object arg) {
+        return ((Function1) func).invoke(arg);
+    }
+
     public static Object evaluateInvoke(InvokeIRExpression expression, Memory memory) {
         return ((Function1) expression.expression.eval(memory)).invoke(expression.arg.eval(memory));
     }

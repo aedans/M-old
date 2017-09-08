@@ -195,6 +195,51 @@ val helloWorld12 by TestType.SuccessTest("Hello, world!") src """
 (a \!)
 """
 
+
+val tailCall1 by TestType.SuccessTest("0") src """
+(def recursion-test
+  (lambda (x)
+    (if (< x 100000)
+      (recursion-test (+ x 1))
+      0)))
+
+(println stdout (recursion-test 0))
+"""
+
+val tailCall2 by TestType.SuccessTest("0") src """
+(def recursion-test2 nil)
+(def recursion-test1
+  (lambda (x)
+    (if (< x 100000)
+      (recursion-test2 (+ x 1))
+      0)))
+
+(def recursion-test2
+  (lambda (x)
+    (if (< x 100000)
+      (recursion-test1 (+ x 1))
+      0)))
+
+(println stdout (recursion-test1 0))
+"""
+
+val tailCall3 by TestType.SuccessTest("1") src """
+(def recursion-test2 nil)
+(def recursion-test1
+  (lambda (x)
+    (if (< x 100000)
+      (lambda (y) (recursion-test2 (+ x y) 1))
+      (lambda (x) x))))
+
+(def recursion-test2
+  (lambda (x)
+    (if (< x 100000)
+      (lambda (y) (recursion-test1 (+ x y) 1))
+      (lambda (x) x))))
+
+(println stdout (recursion-test1 0 1))
+"""
+
 val quote by TestType.SuccessTest("(nil 1 2 3 (4 5 6))") src """
 (print stdout '(() 1 2 3 (4 5 6)))
 """
