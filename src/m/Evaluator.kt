@@ -48,7 +48,6 @@ tailrec fun Heap.expand(i: Int) {
 data class Memory(val stack: Stack, val heap: Heap)
 
 interface StackSafeMFunction : MFunction {
-    override fun invoke(arg: Any): Any = invokeStackSafe(arg).it
     fun invokeStackSafe(arg: Any): Trampoline
 }
 
@@ -76,28 +75,47 @@ private inline fun <T> List<T>.mapToArray(func: (T) -> Any): Array<Any> {
     return Array(size) { func(this[index++]) }
 }
 
+@Suppress("NOTHING_TO_INLINE")
+inline fun Memory.push(closures: Array<Any>, arg: Any) {
+    for (it in closures) {
+        stack.push(it)
+    }
+    stack.push(arg)
+}
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun Memory.pop(num: Int) {
+    for (it in 0..num) {
+        stack.pop()
+    }
+}
+
 fun LambdaIRExpression.evaluate(memory: Memory): MFunction {
     val closures = closures.mapToArray { it.get(memory) }
     return if (isTailCall) {
         object : StackSafeMFunction {
+            override fun invoke(arg: Any): Any {
+                memory.push(closures, arg)
+                expressions.forEach { it.eval(memory) }
+                val ret = value.eval(memory)
+                memory.pop(closures.size)
+                return ret
+            }
+
             override fun invokeStackSafe(arg: Any): Trampoline {
-                closures.forEach { memory.stack.push(it) }
-                memory.stack.push(arg)
+                memory.push(closures, arg)
                 expressions.forEach { it.eval(memory) }
                 val ret = value.evalT(memory)
-                memory.stack.pop()
-                closures.forEach { memory.stack.pop() }
+                memory.pop(closures.size)
                 return ret
             }
         }
     } else {
         { arg ->
-            closures.forEach { memory.stack.push(it) }
-            memory.stack.push(arg)
+            memory.push(closures, arg)
             expressions.forEach { it.eval(memory) }
             val rValue = value.eval(memory)
-            memory.stack.pop()
-            closures.forEach { memory.stack.pop() }
+            memory.pop(closures.size)
             rValue
         }
     }
@@ -122,7 +140,7 @@ fun InvokeIRExpression.evaluateT(memory: Memory): Trampoline {
     return Trampoline.Deferred {
         when (expression) {
             is StackSafeMFunction -> Trampoline.Deferred { expression.invokeStackSafe(arg) }
-            else -> Trampoline.Just(Intrinsics.evaluateInvoke(expression, arg))
+            else -> Trampoline.Just(Intrinsics.evaluateCall(expression, arg))
         }
     }
 }

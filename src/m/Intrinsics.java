@@ -8,7 +8,7 @@ import kotlin.jvm.functions.Function1;
 
 @SuppressWarnings("unchecked")
 public final class Intrinsics {
-    public static Object evaluateInvoke(Object func, Object arg) {
+    public static Object evaluateCall(Object func, Object arg) {
         return ((Function1) func).invoke(arg);
     }
 
