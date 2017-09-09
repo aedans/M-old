@@ -34,6 +34,12 @@ class Stack {
 
     fun push(any: Any) = stack.add(any)
     fun pop() = stack.removeAt(stack.size - 1)
+    tailrec fun pop(i: Int) {
+        if (i >= 0) {
+            pop()
+            pop(i - 1)
+        }
+    }
 }
 
 typealias Heap = ArrayList<Any>
@@ -45,7 +51,7 @@ tailrec fun Heap.expand(i: Int) {
     }
 }
 
-data class Memory(val stack: Stack, val heap: Heap)
+data class Memory(@JvmField val stack: Stack, @JvmField val heap: Heap)
 
 interface StackSafeMFunction : MFunction {
     fun invokeStackSafe(arg: Any): Trampoline
@@ -70,10 +76,7 @@ inline fun IdentifierIRExpression.evaluate(memory: Memory) = Intrinsics.evaluate
 
 fun DefIRExpression.evaluate(memory: Memory) = location.set(memory, expression.eval(memory))
 
-private inline fun <T> List<T>.mapToArray(func: (T) -> Any): Array<Any> {
-    var index = 0
-    return Array(size) { func(this[index++]) }
-}
+private inline fun <T> List<T>.mapToArray(func: (T) -> Any) = Array(size) { func(this[it]) }
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Memory.push(closures: Array<Any>, arg: Any) {
@@ -83,39 +86,28 @@ inline fun Memory.push(closures: Array<Any>, arg: Any) {
     stack.push(arg)
 }
 
-@Suppress("NOTHING_TO_INLINE")
-inline fun Memory.pop(num: Int) {
-    for (it in 0..num) {
-        stack.pop()
-    }
-}
-
 fun LambdaIRExpression.evaluate(memory: Memory): MFunction {
     val closures = closures.mapToArray { it.get(memory) }
     return if (isTailCall) {
         object : StackSafeMFunction {
-            override fun invoke(arg: Any): Any {
-                memory.push(closures, arg)
-                expressions.forEach { it.eval(memory) }
-                val ret = value.eval(memory)
-                memory.pop(closures.size)
-                return ret
-            }
-
-            override fun invokeStackSafe(arg: Any): Trampoline {
+            @Suppress("NOTHING_TO_INLINE")
+            private inline fun i(arg: Any): Trampoline {
                 memory.push(closures, arg)
                 expressions.forEach { it.eval(memory) }
                 val ret = value.evalT(memory)
-                memory.pop(closures.size)
+                memory.stack.pop(closures.size)
                 return ret
             }
+
+            override fun invoke(arg: Any) = i(arg).it
+            override fun invokeStackSafe(arg: Any) = i(arg)
         }
     } else {
         { arg ->
             memory.push(closures, arg)
             expressions.forEach { it.eval(memory) }
             val rValue = value.eval(memory)
-            memory.pop(closures.size)
+            memory.stack.pop(closures.size)
             rValue
         }
     }
