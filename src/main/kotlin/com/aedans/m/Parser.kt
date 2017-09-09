@@ -1,4 +1,4 @@
-package m
+package com.aedans.m
 
 /**
  * Created by Aedan Smith.
@@ -103,7 +103,7 @@ fun parseSExpression(tokens: LookaheadIterator<Token>): Any? = when (tokens[0]) 
             .takeWhile { it !== CParenExpression }
             .iterator()
             .toConsListOrSelf()
-    CParenToken -> CParenExpression
+    CParenToken -> CParenToken
             .also { tokens.drop(1) }
     else -> null
 }

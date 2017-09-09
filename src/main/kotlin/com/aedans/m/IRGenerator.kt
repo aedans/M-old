@@ -1,4 +1,4 @@
-package m
+package com.aedans.m
 
 import java.util.HashMap
 

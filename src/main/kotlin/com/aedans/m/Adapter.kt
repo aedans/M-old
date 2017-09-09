@@ -1,4 +1,4 @@
-package m
+package com.aedans.m
 
 /**
  * Created by Aedan Smith.

@@ -1,4 +1,4 @@
-package m
+package com.aedans.m
 
 import java.io.InputStream
 import java.io.OutputStream
@@ -72,7 +72,6 @@ fun getDefaultRuntimeEnvironment(
 
     env.setVar("print", mFunction<OutputStream, Any, Unit> { p, o -> PrintStream(p).print(o) })
     env.setVar("println", mFunction<OutputStream, Any, Unit> { p, o -> PrintStream(p).println(o) })
-    env.setVar("class-of", mFunction<Any, KClass<*>> { it::class })
 
     return env
 }

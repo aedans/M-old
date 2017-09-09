@@ -1,4 +1,4 @@
-package m
+package com.aedans.m
 
 import java.io.BufferedReader
 import java.io.File

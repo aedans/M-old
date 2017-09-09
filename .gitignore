@@ -1,6 +1,5 @@
-/.idea
-/lib
-/out
-/M.iml
-/*.class
-/*.m
+.kobalt
+*.m
+*.iml
+*.xml
+kobaltBuild

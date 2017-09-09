@@ -1,9 +1,14 @@
 @file:Suppress("unused")
 
-import m.*
+package com.aedans.test
+
+import com.aedans.m.getDefaultRuntimeEnvironment
+import com.aedans.m.interpret
+import com.aedans.m.mFunction
 import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
 /**
@@ -47,6 +52,7 @@ fun main(args: Array<String>) {
                 is TestType.SuccessTest -> {
                     val output = StringOutputStream()
                     val env = getDefaultRuntimeEnvironment(out = PrintStream(output))
+                    env.setVar("class-of", mFunction<Any, Class<*>> { it::class.java })
 
                     src.iterator().interpret(env)
 
@@ -291,20 +297,24 @@ val list by TestType.SuccessTest("(1 2 3)") src """
 """
 
 val numberTokenizer by TestType.SuccessTest("""
-class kotlin.Byte
-class kotlin.Short
-class kotlin.Int
-class kotlin.Long
-class kotlin.Float
-class kotlin.Double
+class java.lang.Byte
+class java.lang.Short
+class java.lang.Integer
+class java.lang.Long
+class java.lang.Float
+class java.lang.Double
 """
 ) src """
-(println stdout (class-of 0B))
-(println stdout (class-of 0S))
-(println stdout (class-of 0I))
-(println stdout (class-of 0L))
-(println stdout (class-of 0F))
-(println stdout (class-of 0D))
+(println stdout (class-of 0b))
+(println stdout (class-of 0s))
+(println stdout (class-of 0i))
+(println stdout (class-of 0l))
+(println stdout (class-of 0f))
+(println stdout (class-of 0d))
+"""
+
+val plusString by TestType.SuccessTest("(Int) -> (Int) -> Int") src """
+(println stdout +)
 """
 
 val fibonacci by TestType.SuccessTest("""
