@@ -61,12 +61,12 @@ sealed class Trampoline {
     abstract val it: Any
     data class Just(override val it: Any) : Trampoline()
     data class Deferred(private val func: () -> Trampoline) : Trampoline() {
-        override val it get() = run {
+        override val it get(): Any {
             tailrec fun getIt(trampoline: Trampoline): Any = when (trampoline) {
                 is Just -> trampoline.it
                 is Deferred -> getIt(trampoline.func())
             }
-            getIt(func())
+            return getIt(func())
         }
     }
 }
@@ -74,7 +74,10 @@ sealed class Trampoline {
 @Suppress("NOTHING_TO_INLINE", "HasPlatformType")
 inline fun IdentifierIRExpression.evaluate(memory: Memory) = Intrinsics.evaluateIdentifier(this, memory)
 
-fun DefIRExpression.evaluate(memory: Memory) = location.set(memory, expression.eval(memory))
+fun DefIRExpression.evaluate(memory: Memory): Any {
+    location.set(memory, expression.eval(memory))
+    return location.get(memory)
+}
 
 private inline fun <T> List<T>.mapToArray(func: (T) -> Any) = Array(size) { func(this[it]) }
 
@@ -93,7 +96,6 @@ fun LambdaIRExpression.evaluate(memory: Memory): MFunction {
             @Suppress("NOTHING_TO_INLINE")
             private inline fun i(arg: Any): Trampoline {
                 memory.push(closures, arg)
-                expressions.forEach { it.eval(memory) }
                 val ret = value.evalT(memory)
                 memory.stack.pop(closures.size)
                 return ret
@@ -105,7 +107,6 @@ fun LambdaIRExpression.evaluate(memory: Memory): MFunction {
     } else {
         { arg ->
             memory.push(closures, arg)
-            expressions.forEach { it.eval(memory) }
             val rValue = value.eval(memory)
             memory.stack.pop(closures.size)
             rValue
@@ -122,6 +123,16 @@ fun IfIRExpression.evaluateT(memory: Memory) = if (condition.eval(memory) as Boo
     ifTrue.evalT(memory)
 else
     ifFalse.evalT(memory)
+
+fun DoIRExpression.evaluate(memory: Memory): Any {
+    expressions.forEach { it.eval(memory) }
+    return value.eval(memory)
+}
+
+fun DoIRExpression.evaluateT(memory: Memory): Trampoline {
+    expressions.forEach { it.eval(memory) }
+    return value.evalT(memory)
+}
 
 @Suppress("NOTHING_TO_INLINE", "HasPlatformType")
 inline fun InvokeIRExpression.evaluate(memory: Memory) = Intrinsics.evaluateInvoke(this, memory)

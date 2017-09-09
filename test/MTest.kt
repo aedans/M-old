@@ -89,7 +89,10 @@ val helloWorld4 by TestType.SuccessTest("Hello, world!") src """
 (def comma ", ")
 (def world "world")
 (def exclamation "!")
-(def test (lambda (x) (print stdout x)))
+(def test
+  (lambda (x)
+    (print stdout x)))
+
 (def print4
   (lambda (w x y z)
     (test w)
@@ -195,6 +198,34 @@ val helloWorld12 by TestType.SuccessTest("Hello, world!") src """
 (a \!)
 """
 
+val helloWorld13 by TestType.SuccessTest("Hello, world!") src """
+(print stdout
+  (do
+    (print stdout "Hello, ")
+    (print stdout "world")
+    "!"))
+"""
+
+val helloWorld14 by TestType.SuccessTest("Hello, world!") src """
+(do
+  (def hello "Hello")
+  (def comma ", ")
+  (def world "world")
+  (def exclamation "!"))
+
+(def test
+  (lambda (x)
+    (print stdout x)))
+
+(def print4
+  (lambda (w x y z)
+    (test w)
+    (test x)
+    (test y)
+    (test z)))
+
+(print4 hello comma world exclamation)
+"""
 
 val tailCall1 by TestType.SuccessTest("0") src """
 (def recursion-test

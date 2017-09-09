@@ -8,9 +8,10 @@ A Minimal Lisp.
 (def <identifier> <expression>)
 ```
 
+Evaluates to expression.
 Defines a global variable with name identifier and value expression.
 Shadows previously defined variables.
-Only valid at the top level.
+Identifier must be an unbound atom.
 
 ```
 (lambda (<identifier>+) <expression>+)
@@ -29,6 +30,13 @@ Closures are supported.
 
 If condition is true, evaluates to then, otherwise evaluates to else.
 If there is no else, and condition is false, evaluates to nil instead.
+
+```
+(do <expression>+)
+```
+
+Evaluates to the last expression.
+Each expression is evaluated sequentially.
 
 ```
 '(<expression>+)
@@ -60,6 +68,10 @@ Each expression in the list preceded by a tilde will be evaluated and merged int
 - `|` Takes two arguments, returns true if both arguments are true
 - `&` Takes two arguments, returns true if either argument is true
 - `=` Takes two arguments, returns true if both arguments are equal
+- `+(i/l/f/d)?` Takes two arguments, returns their sum. i/l/f/d to specify the return type.
+- `-(i/l/f/d)?` Takes two arguments, returns their difference. i/l/f/d to specify the return type.
+- `*(i/l/f/d)?` Takes two arguments, returns their product. i/l/f/d to specify the return type.
+- `/(i/l/f/d)?` Takes two arguments, returns their quotient. i/l/f/d to specify the return type.
 - `read` Takes an input stream, returns the next char in the input stream
 - `write` Takes an output stream and a char, writes the char to the output stream
 - `stdout` The standard output stream

@@ -45,6 +45,7 @@ fun Expression.toIRExpression(symbolTable: SymbolTable): IRExpression = null ?:
         generateDefIR(symbolTable, this) ?:
         generateLambdaIR(symbolTable, this) ?:
         generateIfIR(symbolTable, this) ?:
+        generateDoIR(symbolTable, this) ?:
         generateQuoteIR(this) ?:
         generateQuasiquoteIR(symbolTable, this) ?:
         generateInvokeIR(symbolTable, this) ?:
@@ -118,14 +119,11 @@ fun generateDefIR(
 
 data class LambdaIRExpression(
         val closures: List<MemoryLocation>,
-        val expressions: List<IRExpression>,
         val value: IRExpression
 ) : IRExpression {
     val isTailCall = value.hasTailCall()
     override fun eval(memory: Memory) = evaluate(memory)
-    override fun toString() = "(lambda $closures " +
-            expressions.joinToString(separator = " ") + (if (expressions.isEmpty()) "" else " ") +
-            "$value)"
+    override fun toString() = "(lambda $closures $value)"
 }
 
 class ClosedSymbolTable(val symbolTable: SymbolTable) : SymbolTable {
@@ -178,8 +176,10 @@ private fun generateLambdaIRExpression(
     }
     return LambdaIRExpression(
             env.closures.map { it.second }.reversed(),
-            irExpressions.dropLast(1),
-            irExpressions.last()
+            when (irExpressions.size) {
+                1 -> irExpressions.first()
+                else -> DoIRExpression(irExpressions.dropLast(1), irExpressions.last())
+            }
     )
 }
 
@@ -194,8 +194,8 @@ data class IfIRExpression(
 }
 
 fun generateIfIR(
-        memory: SymbolTable, expr: Expression
-) = generateUniqueSExpressionIR(memory, expr, "if") { environment, sExpression ->
+        symbolTable: SymbolTable, expr: Expression
+) = generateUniqueSExpressionIR(symbolTable, expr, "if") { environment, sExpression ->
     val condition = sExpression[0]
     val ifTrue = sExpression[1]
     val ifFalse = if (sExpression.size > 2) sExpression[2] else null
@@ -204,6 +204,25 @@ fun generateIfIR(
             ifTrue.toIRExpression(environment),
             ifFalse?.toIRExpression(environment) ?: NilLiteralIRExpression
     )
+}
+
+data class DoIRExpression(
+        val expressions: List<IRExpression>,
+        val value: IRExpression
+) : IRExpression {
+    override fun eval(memory: Memory) = evaluate(memory)
+    override fun evalT(memory: Memory) = evaluateT(memory)
+    override fun toString() = "(do " +
+            expressions.joinToString(separator = " ") + (if (expressions.isEmpty()) "" else " ") +
+            "$value)"
+}
+
+fun generateDoIR(
+        symbolTable: SymbolTable, expr: Expression
+) = generateUniqueSExpressionIR(symbolTable, expr, "do") { _, sExpression ->
+    val expressions = sExpression.take(sExpression.size - 1).map { it.toIRExpression(symbolTable) }
+    val value = sExpression.last().toIRExpression(symbolTable)
+    DoIRExpression(expressions, value)
 }
 
 fun generateQuoteIR(expr: Expression) = expr.takeIfInstance<QuoteExpression>()?.let { LiteralIRExpression(it.cons) }
