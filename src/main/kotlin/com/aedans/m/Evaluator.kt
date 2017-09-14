@@ -5,10 +5,12 @@ package com.aedans.m
  */
 
 sealed class MemoryLocation {
+    abstract val isConst: Boolean
     abstract fun get(memory: Memory): Any
     abstract fun set(memory: Memory, any: Any)
 
     class HeapPointer(private val index: Int) : MemoryLocation() {
+        override val isConst get() = true
         @Suppress("HasPlatformType")
         override fun get(memory: Memory) = memory.heap[index]
         override fun set(memory: Memory, any: Any) = let {
@@ -19,6 +21,7 @@ sealed class MemoryLocation {
     }
 
     class StackPointer(private val index: Int) : MemoryLocation() {
+        override val isConst get() = false
         override fun get(memory: Memory) = memory.stack[index]
         override fun set(memory: Memory, any: Any) = memory.stack.set(index, any)
         override fun toString() = "*s$index"

@@ -26,7 +26,18 @@ interface IRExpression {
     fun evalT(memory: Memory): Trampoline = Trampoline.Just(eval(memory))
 }
 
-open class LiteralIRExpression(val literal: Any) : IRExpression {
+interface PureIRExpression : IRExpression
+data class PureIRExpressionImpl(val irExpression: IRExpression) : PureIRExpression {
+    var value: Any? = null
+    override fun eval(memory: Memory): Any = value?.let { it } ?: run {
+        value = irExpression.eval(memory)
+        value!!
+    }
+
+    override fun toString() = "PURE $irExpression"
+}
+
+open class LiteralIRExpression(val literal: Any) : PureIRExpression {
     override fun eval(memory: Memory) = literal
     override fun toString() = "$literal"
 }
@@ -81,24 +92,14 @@ data class IdentifierIRExpression(@JvmField val memoryLocation: MemoryLocation) 
     override fun toString() = "$memoryLocation"
 }
 
-data class PureIdentifierIRExpression(val memoryLocation: MemoryLocation) : IRExpression {
-    var value: Any? = null
-    override fun eval(memory: Memory): Any = value?.let { it } ?: run {
-        value = memoryLocation.get(memory)
-        value!!
-    }
-
-    override fun toString() = "PURE $memoryLocation"
-}
-
 fun generateIdentifierIR(symbolTable: SymbolTable, expression: Expression) = expression
         .takeIfInstance<IdentifierExpression>()
         ?.let {
             val location = symbolTable.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
-            when (location) {
-                is MemoryLocation.HeapPointer -> PureIdentifierIRExpression(location)
-                else -> IdentifierIRExpression(location)
-            }
+            if (location.isConst)
+                PureIRExpressionImpl(IdentifierIRExpression(location))
+            else
+                IdentifierIRExpression(location)
         }
 
 data class DefIRExpression(val expression: IRExpression, val location: MemoryLocation) : IRExpression {
@@ -275,5 +276,10 @@ fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpre
                 1 -> NilLiteralIRExpression
                 else -> it.last().toIRExpression(symbolTable)
             }
-            InvokeIRExpression(expression, arg)
+            if (expression is InvokeIRExpression
+                    && expression.expression is PureIRExpression
+                    && expression.arg is PureIRExpression)
+                InvokeIRExpression(PureIRExpressionImpl(expression), arg)
+            else
+                InvokeIRExpression(expression, arg)
         }
