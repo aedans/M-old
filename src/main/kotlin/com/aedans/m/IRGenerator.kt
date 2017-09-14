@@ -13,7 +13,7 @@ interface SymbolTable {
     fun allocateLocation(name: String) = getLocation(name) ?: allocateNewLocation(name)
 }
 
-class IRSymbolTable(val container: SymbolTable? = null) : SymbolTable {
+class IRSymbolTable(private val container: SymbolTable? = null) : SymbolTable {
     var allocationIndex = 0
     private val vars = HashMap<String, MemoryLocation?>()
     override fun getLocation(name: String) = vars[name] ?: container?.getLocation(name)
@@ -31,10 +31,9 @@ open class LiteralIRExpression(val literal: Any) : IRExpression {
     override fun toString() = "$literal"
 }
 
-fun Iterator<Expression>.generateIR(symbolTable: SymbolTable) = lookaheadIterator().generateIR(symbolTable)
-fun LookaheadIterator<Expression>.generateIR(symbolTable: SymbolTable): Iterator<IRExpression> = collect {
-    next().toIRExpression(symbolTable)
-}
+fun Iterator<Expression>.generateIR(symbolTable: SymbolTable) = asSequence()
+        .map { it.toIRExpression(symbolTable) }
+        .iterator()
 
 fun Expression.toIRExpression(symbolTable: SymbolTable): IRExpression = null ?:
         generateNilLiteralIR(this) ?:
@@ -76,20 +75,20 @@ fun generateCharLiteralIR(expression: Expression) = generateLiteralIR<CharLitera
 fun generateStringLiteralIR(expression: Expression) = generateLiteralIR<StringLiteralExpression>(expression)
 fun generateNumberLiteralIR(expression: Expression) = generateLiteralIR<NumberLiteralExpression>(expression)
 
-data class IdentifierIRExpression(val name: String, @JvmField val memoryLocation: MemoryLocation) : IRExpression {
+data class IdentifierIRExpression(@JvmField val memoryLocation: MemoryLocation) : IRExpression {
     @Suppress("HasPlatformType")
     override fun eval(memory: Memory) = evaluate(memory)
-    override fun toString() = "$name : $memoryLocation"
+    override fun toString() = "$memoryLocation"
 }
 
-data class PureIdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) : IRExpression {
+data class PureIdentifierIRExpression(val memoryLocation: MemoryLocation) : IRExpression {
     var value: Any? = null
     override fun eval(memory: Memory): Any = value?.let { it } ?: run {
         value = memoryLocation.get(memory)
         value!!
     }
 
-    override fun toString() = "PURE $name : $memoryLocation"
+    override fun toString() = "PURE $memoryLocation"
 }
 
 fun generateIdentifierIR(symbolTable: SymbolTable, expression: Expression) = expression
@@ -97,14 +96,14 @@ fun generateIdentifierIR(symbolTable: SymbolTable, expression: Expression) = exp
         ?.let {
             val location = symbolTable.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
             when (location) {
-                is MemoryLocation.HeapPointer -> PureIdentifierIRExpression(it.name, location)
-                else -> IdentifierIRExpression(it.name, location)
+                is MemoryLocation.HeapPointer -> PureIdentifierIRExpression(location)
+                else -> IdentifierIRExpression(location)
             }
         }
 
-data class DefIRExpression(val name: String, val expression: IRExpression, val location: MemoryLocation) : IRExpression {
+data class DefIRExpression(val expression: IRExpression, val location: MemoryLocation) : IRExpression {
     override fun eval(memory: Memory) = evaluate(memory)
-    override fun toString() = "(def $name $expression)"
+    override fun toString() = "(def $location $expression)"
 }
 
 fun generateDefIR(
@@ -114,7 +113,7 @@ fun generateDefIR(
     val expression = sExpression[1]
     val location = symbolTable.allocateLocation(name)
     symbolTable.setLocation(name, location)
-    DefIRExpression(name, expression.toIRExpression(symbolTable), location)
+    DefIRExpression(expression.toIRExpression(symbolTable), location)
 }
 
 data class LambdaIRExpression(
@@ -126,7 +125,7 @@ data class LambdaIRExpression(
     override fun toString() = "(lambda $closures $value)"
 }
 
-class ClosedSymbolTable(val symbolTable: SymbolTable) : SymbolTable {
+class ClosedSymbolTable(private val symbolTable: SymbolTable) : SymbolTable {
     private val vars = mutableMapOf<String, MemoryLocation.StackPointer>()
     val closures = mutableListOf<Pair<String, MemoryLocation>>()
 
