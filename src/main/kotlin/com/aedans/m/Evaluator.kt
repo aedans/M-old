@@ -12,7 +12,7 @@ sealed class MemoryLocation {
         @Suppress("HasPlatformType")
         override fun get(memory: Memory) = memory.heap[index]
         override fun set(memory: Memory, any: Any) = let {
-            memory.heap.expand(index)
+            memory.heap = memory.heap.expand(index)
             memory.heap[index] = any
         }
         override fun toString() = "*h$index"
@@ -42,16 +42,17 @@ class Stack {
     }
 }
 
-typealias Heap = ArrayList<Any>
+typealias Heap = Array<Any>
 
-tailrec fun Heap.expand(i: Int) {
-    if (i >= size) {
-        add(Nil)
-        expand(i)
-    }
+fun Heap.expand(i: Int) = if (i < size)
+    this
+else {
+    val newArray = Array((i + 1) * 2) { Nil as Any }
+    System.arraycopy(this, 0, newArray, 0, size)
+    newArray
 }
 
-data class Memory(@JvmField val stack: Stack, @JvmField val heap: Heap)
+class Memory(@JvmField val stack: Stack, @JvmField var heap: Heap)
 
 interface StackSafeMFunction : MFunction {
     fun invokeStackSafe(arg: Any): Trampoline

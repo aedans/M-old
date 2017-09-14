@@ -22,7 +22,7 @@ fun getDefaultRuntimeEnvironment(
         out: OutputStream = System.out,
         err: OutputStream = System.err
 ): RuntimeEnvironment {
-    val env = RuntimeEnvironment(IRSymbolTable(), Memory(Stack(), Heap()))
+    val env = RuntimeEnvironment(IRSymbolTable(), Memory(Stack(), Heap(0) { Nil }))
 
     env.setVar("true", true)
     env.setVar("false", false)
