@@ -1,14 +1,13 @@
 package com.aedans.m
 
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStream
+import java.io.Reader
 
 /**
  * Created by Aedan Smith.
  */
 
-operator fun BufferedReader.iterator() = object : Iterator<Char> {
+operator fun Reader.iterator() = object : Iterator<Char> {
     override fun hasNext() = this@iterator.ready()
     override fun next() = this@iterator.read().toChar()
 }

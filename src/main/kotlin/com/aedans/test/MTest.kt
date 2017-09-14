@@ -8,7 +8,6 @@ import com.aedans.m.mFunction
 import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
 /**
@@ -236,9 +235,10 @@ val helloWorld14 by TestType.SuccessTest("Hello, world!") src """
 val tailCall1 by TestType.SuccessTest("0") src """
 (def recursion-test
   (lambda (x)
-    (if (< x 100000)
-      (recursion-test (+ x 1))
-      0)))
+    (do
+      (if (< x 100000)
+        (recursion-test (+ x 1))
+        0))))
 
 (println stdout (recursion-test 0))
 """
@@ -248,14 +248,15 @@ val tailCall2 by TestType.SuccessTest("0") src """
 (def recursion-test1
   (lambda (x)
     (if (< x 100000)
-      (recursion-test2 (+ x 1))
+      (do (recursion-test2 (+ x 1)))
       0)))
 
 (def recursion-test2
   (lambda (x)
-    (if (< x 100000)
-      (recursion-test1 (+ x 1))
-      0)))
+    (do
+      (if (< x 100000)
+        (recursion-test1 (+ x 1))
+        0))))
 
 (println stdout (recursion-test1 0))
 """

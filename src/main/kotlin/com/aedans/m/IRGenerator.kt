@@ -150,6 +150,7 @@ class ClosedSymbolTable(val symbolTable: SymbolTable) : SymbolTable {
 
 fun IRExpression.hasTailCall(): Boolean = when (this) {
     is InvokeIRExpression -> true
+    is DoIRExpression -> value.hasTailCall()
     is IfIRExpression -> ifTrue.hasTailCall() || ifFalse.hasTailCall()
     else -> false
 }
