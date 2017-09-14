@@ -82,14 +82,14 @@ data class IdentifierIRExpression(val name: String, @JvmField val memoryLocation
     override fun toString() = "$name : $memoryLocation"
 }
 
-data class ConstIdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation.HeapPointer) : IRExpression {
+data class PureIdentifierIRExpression(val name: String, val memoryLocation: MemoryLocation) : IRExpression {
     var value: Any? = null
     override fun eval(memory: Memory): Any = value?.let { it } ?: run {
         value = memoryLocation.get(memory)
         value!!
     }
 
-    override fun toString() = "CONST $name : $memoryLocation"
+    override fun toString() = "PURE $name : $memoryLocation"
 }
 
 fun generateIdentifierIR(symbolTable: SymbolTable, expression: Expression) = expression
@@ -97,7 +97,7 @@ fun generateIdentifierIR(symbolTable: SymbolTable, expression: Expression) = exp
         ?.let {
             val location = symbolTable.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
             when (location) {
-                is MemoryLocation.HeapPointer -> ConstIdentifierIRExpression(it.name, location)
+                is MemoryLocation.HeapPointer -> PureIdentifierIRExpression(it.name, location)
                 else -> IdentifierIRExpression(it.name, location)
             }
         }

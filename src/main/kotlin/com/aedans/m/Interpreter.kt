@@ -13,8 +13,6 @@ operator fun Reader.iterator() = object : Iterator<Char> {
 }
 
 fun File.interpret(env: RuntimeEnvironment) = bufferedReader().iterator().interpret(env)
-fun Iterator<Char>.interpret(env: RuntimeEnvironment) {
-    this
-            .toIR(env)
-            .forEach { it.eval(env.memory) }
-}
+fun Iterator<Char>.interpret(env: RuntimeEnvironment) = this
+        .toIR(env)
+        .forEach { it.eval(env.memory) }
