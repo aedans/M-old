@@ -121,9 +121,13 @@ data class LambdaIRExpression(
         val closures: List<MemoryLocation>,
         val value: IRExpression
 ) : IRExpression {
-    val isTailCall = value.hasTailCall()
     override fun eval(memory: Memory) = evaluate(memory)
     override fun toString() = "(lambda $closures $value)"
+}
+
+data class SimpleLambdaIRExpression(val value: IRExpression) : IRExpression {
+    override fun eval(memory: Memory) = evaluate(memory)
+    override fun toString() = "(lambda $value)"
 }
 
 class ClosedSymbolTable(private val symbolTable: SymbolTable) : SymbolTable {
@@ -148,13 +152,6 @@ class ClosedSymbolTable(private val symbolTable: SymbolTable) : SymbolTable {
     override fun allocateNewLocation(name: String) = symbolTable.allocateNewLocation(name)
 }
 
-fun IRExpression.hasTailCall(): Boolean = when (this) {
-    is InvokeIRExpression -> true
-    is DoIRExpression -> value.hasTailCall()
-    is IfIRExpression -> ifTrue.hasTailCall() || ifFalse.hasTailCall()
-    else -> false
-}
-
 fun generateLambdaIR(
         symbolTable: SymbolTable, expr: Expression
 ) = generateUniqueSExpressionIR(symbolTable, expr, "lambda") { environment, sExpression ->
@@ -167,7 +164,7 @@ private fun generateLambdaIRExpression(
         symbolTable: SymbolTable,
         argNames: List<String>,
         expressions: List<Expression>
-): LambdaIRExpression {
+): IRExpression {
     val argName = argNames[0]
     val env = ClosedSymbolTable(symbolTable)
     env.setLocation(argName, MemoryLocation.StackPointer(0))
@@ -175,13 +172,17 @@ private fun generateLambdaIRExpression(
         1 -> expressions.map { it.toIRExpression(env) }
         else -> listOf(generateLambdaIRExpression(env, argNames.drop(1), expressions))
     }
-    return LambdaIRExpression(
+    val value = when (irExpressions.size) {
+        1 -> irExpressions.first()
+        else -> DoIRExpression(irExpressions.dropLast(1), irExpressions.last())
+    }
+    return if (env.closures.isEmpty())
+        PureIRExpressionImpl(SimpleLambdaIRExpression(value))
+    else
+        LambdaIRExpression(
             env.closures.map { it.second }.reversed(),
-            when (irExpressions.size) {
-                1 -> irExpressions.first()
-                else -> DoIRExpression(irExpressions.dropLast(1), irExpressions.last())
-            }
-    )
+            value
+        )
 }
 
 data class IfIRExpression(

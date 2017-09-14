@@ -93,29 +93,32 @@ inline fun Memory.push(closures: Array<Any>, arg: Any) {
     stack.push(arg)
 }
 
-fun LambdaIRExpression.evaluate(memory: Memory): MFunction {
-    val closures = closures.mapToArray { it.get(memory) }
-    return if (isTailCall) {
-        object : StackSafeMFunction {
-            @Suppress("NOTHING_TO_INLINE")
-            private inline fun i(arg: Any): Trampoline {
-                memory.push(closures, arg)
-                val ret = value.evalT(memory)
-                memory.stack.pop(closures.size)
-                return ret
-            }
+fun LambdaIRExpression.evaluate(memory: Memory) = object : StackSafeMFunction {
+    val closures = this@evaluate.closures.mapToArray { it.get(memory) }
 
-            override fun invoke(arg: Any) = i(arg).it
-            override fun invokeStackSafe(arg: Any) = i(arg)
-        }
-    } else {
-        { arg ->
-            memory.push(closures, arg)
-            val rValue = value.eval(memory)
-            memory.stack.pop(closures.size)
-            rValue
-        }
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun i(arg: Any): Trampoline {
+        memory.push(closures, arg)
+        val ret = value.evalT(memory)
+        memory.stack.pop(closures.size)
+        return ret
     }
+
+    override fun invoke(arg: Any) = i(arg).it
+    override fun invokeStackSafe(arg: Any) = i(arg)
+}
+
+fun SimpleLambdaIRExpression.evaluate(memory: Memory) = object : StackSafeMFunction {
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun i(arg: Any): Trampoline {
+        memory.stack.push(arg)
+        val ret = value.evalT(memory)
+        memory.stack.pop()
+        return ret
+    }
+
+    override fun invoke(arg: Any) = i(arg).it
+    override fun invokeStackSafe(arg: Any) = i(arg)
 }
 
 fun IfIRExpression.evaluate(memory: Memory) = if (condition.eval(memory) as Boolean)
