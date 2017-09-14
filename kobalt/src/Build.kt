@@ -6,7 +6,7 @@ val m = project {
     name = "M"
     group = "com.aedans"
     artifactId = "m"
-    version = "0.13"
+    version = "0.14"
 
     dependencies {
         compile("org.jetbrains.kotlin:kotlin-runtime:1.1.2")
@@ -16,7 +16,9 @@ val m = project {
 
     assemble {
         jar {
+            name = "M.jar"
             fatJar = true
+            addAttribute("Main-Class", "com.aedans.m.CliKt")
         }
     }
 
