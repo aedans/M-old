@@ -8,10 +8,10 @@ A Minimal Lisp.
 (def <identifier> <expression>)
 ```
 
-Evaluates to expression.
+Evaluates to Unit.
 Defines a global variable with name identifier and value expression.
 Shadows previously defined variables.
-Identifier must be an unbound atom.
+Identifier must be an atom.
 
 ```
 (lambda (<identifier>+) <expression>+)

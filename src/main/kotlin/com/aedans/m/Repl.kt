@@ -16,7 +16,9 @@ object Repl : Runnable {
                             irExpressionIterator: Iterator<IRExpression> = ReplStream(System.`in`, System.out)
                                     .toIR(environment)) {
         val success = try {
-            irExpressionIterator.next().eval(environment.memory).takeIf { it != Unit }?.also { println(it) }
+            irExpressionIterator.next().eval(environment.memory)
+                    .takeIf { it != Unit }
+                    ?.also { println(it) }
             true
         } catch (t: Throwable) {
             t.printStackTrace(System.out)

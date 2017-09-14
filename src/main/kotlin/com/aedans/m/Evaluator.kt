@@ -78,9 +78,8 @@ sealed class Trampoline {
 @Suppress("NOTHING_TO_INLINE", "HasPlatformType")
 inline fun IdentifierIRExpression.evaluate(memory: Memory) = Intrinsics.evaluateIdentifier(this, memory)
 
-fun DefIRExpression.evaluate(memory: Memory): Any {
+fun DefIRExpression.evaluate(memory: Memory) {
     location.set(memory, expression.eval(memory))
-    return location.get(memory)
 }
 
 private inline fun <T> List<T>.mapToArray(func: (T) -> Any) = Array(size) { func(this[it]) }
