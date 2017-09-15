@@ -10,6 +10,7 @@ sealed class IRExpression {
 
 class PureIRExpression(val irExpression: IRExpression) : IRExpression() {
     override val isPure get() = true
+    override fun toString() = "PURE $irExpression"
 }
 
 open class LiteralIRExpression(val literal: Any) : IRExpression() {
