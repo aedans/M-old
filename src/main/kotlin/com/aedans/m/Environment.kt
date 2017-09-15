@@ -39,8 +39,6 @@ fun getDefaultRuntimeEnvironment(
     env.setVar("|", mFunction(Boolean::or))
     env.setVar("&", mFunction(Boolean::and))
     env.setVar("=", mFunction(Any::equals))
-    env.setVar("<", mFunction { x: Int, y: Int -> x < y })
-    env.setVar(">", mFunction { x: Int, y: Int -> x > y })
 
     env.setVar("+i", mFunction<Int, Int, Int>(Int::plus))
     env.setVar("-i", mFunction<Int, Int, Int>(Int::minus))
@@ -62,6 +60,17 @@ fun getDefaultRuntimeEnvironment(
     listOf("+", "-", "*", "/").forEach {
         env.setVar(it, env.getVar(it + "i")!!)
     }
+
+    env.setVar("<i", mFunction { x: Int, y: Int -> x < y })
+    env.setVar(">i", mFunction { x: Int, y: Int -> x > y })
+    env.setVar("<l", mFunction { x: Long, y: Long -> x < y })
+    env.setVar(">l", mFunction { x: Long, y: Long -> x > y })
+    env.setVar("<f", mFunction { x: Float, y: Float -> x < y })
+    env.setVar(">f", mFunction { x: Float, y: Float -> x > y })
+    env.setVar("<d", mFunction { x: Double, y: Double -> x < y })
+    env.setVar(">d", mFunction { x: Double, y: Double -> x > y })
+    env.setVar(">", env.getVar(">i")!!)
+    env.setVar("<", env.getVar("<i")!!)
 
     env.setVar("stdin", `in`)
     env.setVar("stdout", out)
