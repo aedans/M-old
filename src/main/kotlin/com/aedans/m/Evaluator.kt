@@ -38,7 +38,7 @@ class Stack {
     fun push(any: Any) = stack.add(any)
     fun pop() = stack.removeAt(stack.size - 1)
     tailrec fun pop(i: Int) {
-        if (i >= 0) {
+        if (i > 0) {
             pop()
             pop(i - 1)
         }
@@ -47,9 +47,9 @@ class Stack {
 
 typealias Heap = Array<Any>
 
-fun Heap.expand(i: Int) = if (i < size)
+fun Heap.expand(i: Int) = if (i < size) {
     this
-else {
+} else {
     val newArray = Array((i + 1) * 2) { Nil as Any }
     System.arraycopy(this, 0, newArray, 0, size)
     newArray
@@ -65,13 +65,12 @@ sealed class Trampoline {
     abstract val it: Any
     data class Just(override val it: Any) : Trampoline()
     data class Deferred(private val func: () -> Trampoline) : Trampoline() {
-        override val it get(): Any {
-            tailrec fun getIt(trampoline: Trampoline): Any = when (trampoline) {
-                is Just -> trampoline.it
-                is Deferred -> getIt(trampoline.func())
-            }
-            return getIt(func())
+        private tailrec fun getIt(trampoline: Trampoline): Any = when (trampoline) {
+            is Just -> trampoline.it
+            is Deferred -> getIt(trampoline.func())
         }
+
+        override val it get() = getIt(func())
     }
 }
 
@@ -84,22 +83,18 @@ fun DefIRExpression.evaluate(memory: Memory) {
 
 private inline fun <T> List<T>.mapToArray(func: (T) -> Any) = Array(size) { func(this[it]) }
 
-@Suppress("NOTHING_TO_INLINE")
-inline fun Memory.push(closures: Array<Any>, arg: Any) {
-    for (it in closures) {
-        stack.push(it)
-    }
-    stack.push(arg)
-}
-
 fun LambdaIRExpression.evaluate(memory: Memory) = object : StackSafeMFunction {
     val closures = this@evaluate.closures.mapToArray { it.get(memory) }
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun i(arg: Any): Trampoline {
-        memory.push(closures, arg)
+        for (it in closures) {
+            memory.stack.push(it)
+        }
+        memory.stack.push(arg)
         val ret = value.evalT(memory)
         memory.stack.pop(closures.size)
+        memory.stack.pop()
         return ret
     }
 
@@ -146,12 +141,10 @@ inline fun InvokeIRExpression.evaluate(memory: Memory) = Intrinsics.evaluateInvo
 fun InvokeIRExpression.evaluateT(memory: Memory): Trampoline {
     val expression = expression.eval(memory)
     val arg = arg.eval(memory)
-    return Trampoline.Deferred {
-        when (expression) {
-            is StackSafeMFunction -> Trampoline.Deferred { expression.invokeStackSafe(arg) }
-            else -> Trampoline.Just(Intrinsics.evaluateCall(expression, arg))
-        }
-    }
+    return if (expression is StackSafeMFunction)
+        Trampoline.Deferred { expression.invokeStackSafe(arg) }
+    else
+        Trampoline.Just(Intrinsics.evaluateCall(expression, arg))
 }
 
 fun QuasiquoteIRExpression.evaluate(memory: Memory): Any {
