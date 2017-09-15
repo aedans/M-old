@@ -9,11 +9,11 @@ import java.io.PrintStream
  */
 
 data class RuntimeEnvironment(val symbolTable: SymbolTable, val memory: Memory) {
-    fun getVar(name: String) = symbolTable.getLocation(name)?.get(memory)
+    fun getVar(name: String) = symbolTable.getLocation(name)?.toAccessible()?.get(memory)
     fun setVar(name: String, obj: Any) {
         val location = symbolTable.allocateLocation(name)
         symbolTable.setLocation(name, location)
-        location.set(memory, obj)
+        location.toAccessible().set(memory, obj)
     }
 }
 
@@ -22,7 +22,7 @@ fun getDefaultRuntimeEnvironment(
         out: OutputStream = System.out,
         err: OutputStream = System.err
 ): RuntimeEnvironment {
-    val env = RuntimeEnvironment(IRSymbolTable(), Memory(Stack(), Heap(0) { Nil }))
+    val env = RuntimeEnvironment(IRSymbolTable(), Memory(Heap(0) { Nil }, Stack()))
 
     env.setVar("true", true)
     env.setVar("false", false)

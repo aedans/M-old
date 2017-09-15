@@ -68,8 +68,8 @@ fun generateIdentifierIR(symbolTable: SymbolTable, expression: Expression) = exp
         .takeIfInstance<IdentifierExpression>()
         ?.let {
             val location = symbolTable.getLocation(it.name) ?: throw Exception("Could not find symbol ${it.name}")
-            if (location.isConst)
-                PureIRExpressionImpl(IdentifierIRExpression(location))
+            if (location is MemoryLocation.HeapPointer)
+                PureIRExpression(IdentifierIRExpression(location))
             else
                 IdentifierIRExpression(location)
         }
@@ -130,13 +130,10 @@ private fun generateLambdaIRExpression(
         1 -> irExpressions.first()
         else -> DoIRExpression(irExpressions.dropLast(1), irExpressions.last())
     }
-    return if (env.closures.isEmpty())
-        PureIRExpressionImpl(SimpleLambdaIRExpression(value))
-    else
-        LambdaIRExpression(
+    return LambdaIRExpression(
             env.closures.map { it.second }.reversed(),
             value
-        )
+    )
 }
 
 fun generateIfIR(
@@ -189,9 +186,9 @@ fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpre
                 else -> it.last().toIRExpression(symbolTable)
             }
             if (expression is InvokeIRExpression
-                    && expression.expression is PureIRExpression
-                    && expression.arg is PureIRExpression)
-                InvokeIRExpression(PureIRExpressionImpl(expression), arg)
+                    && expression.expression.isPure
+                    && expression.arg.isPure)
+                InvokeIRExpression(PureIRExpression(expression), arg)
             else
                 InvokeIRExpression(expression, arg)
         }

@@ -13,10 +13,10 @@ object Repl : Runnable {
     }
 
     private tailrec fun run(environment: RuntimeEnvironment,
-                            irExpressionIterator: Iterator<IRExpression> = ReplStream(System.`in`, System.out)
-                                    .toIR(environment)) {
+                            evaluableIterator: Iterator<Evaluable> = ReplStream(System.`in`, System.out)
+                                    .toEvaluable(environment)) {
         val success = try {
-            irExpressionIterator.next().eval(environment.memory)
+            evaluableIterator.next().eval(environment.memory)
                     .takeIf { it != Unit }
                     ?.also { println(it) }
             true
@@ -25,7 +25,7 @@ object Repl : Runnable {
             false
         }
         if (success) {
-            run(environment, irExpressionIterator)
+            run(environment, evaluableIterator)
         } else {
             run(environment)
         }

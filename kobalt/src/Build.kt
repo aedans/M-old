@@ -12,6 +12,7 @@ val m = project {
         compile("org.jetbrains.kotlin:kotlin-runtime:1.1.2")
         compile("org.jetbrains.kotlin:kotlin-stdlib:1.1.2")
         compile("org.jetbrains.kotlin:kotlin-reflect:1.1.2")
+        compile("asm:asm-all:")
     }
 
     assemble {

@@ -5,26 +5,32 @@ package com.aedans.m
  */
 
 sealed class MemoryLocation {
-    abstract val isConst: Boolean
-    abstract fun get(memory: Memory): Any
-    abstract fun set(memory: Memory, any: Any)
+    data class HeapPointer(val index: Int) : MemoryLocation() {
+        override fun toString() = "*h$index"
+    }
 
-    class HeapPointer(private val index: Int) : MemoryLocation() {
-        override val isConst get() = true
+    data class StackPointer(val index: Int) : MemoryLocation() {
+        override fun toString() = "*s$index"
+    }
+}
+
+interface Accessible {
+    fun get(memory: Memory): Any
+    fun set(memory: Memory, any: Any)
+}
+
+fun MemoryLocation.toAccessible() = when (this) {
+    is MemoryLocation.HeapPointer -> object : Accessible {
         @Suppress("HasPlatformType")
         override fun get(memory: Memory) = memory.heap[index]
         override fun set(memory: Memory, any: Any) = let {
             memory.heap = memory.heap.expand(index)
             memory.heap[index] = any
         }
-        override fun toString() = "*h$index"
     }
-
-    class StackPointer(private val index: Int) : MemoryLocation() {
-        override val isConst get() = false
+    is MemoryLocation.StackPointer -> object : Accessible {
         override fun get(memory: Memory) = memory.stack[index]
         override fun set(memory: Memory, any: Any) = memory.stack.set(index, any)
-        override fun toString() = "*s$index"
     }
 }
 
@@ -55,7 +61,7 @@ fun Heap.expand(i: Int) = if (i < size) {
     newArray
 }
 
-class Memory(@JvmField val stack: Stack, @JvmField var heap: Heap)
+class Memory(@JvmField var heap: Heap, @JvmField val stack: Stack)
 
 interface StackSafeMFunction : MFunction {
     fun invokeStackSafe(arg: Any): Trampoline
@@ -74,101 +80,185 @@ sealed class Trampoline {
     }
 }
 
-@Suppress("NOTHING_TO_INLINE", "HasPlatformType")
-inline fun IdentifierIRExpression.evaluate(memory: Memory) = Intrinsics.evaluateIdentifier(this, memory)
-
-fun DefIRExpression.evaluate(memory: Memory) {
-    location.set(memory, expression.eval(memory))
+interface Evaluable {
+    fun eval(memory: Memory): Any
+    fun evalT(memory: Memory): Trampoline = Trampoline.Just(eval(memory))
 }
 
-private inline fun <T> List<T>.mapToArray(func: (T) -> Any) = Array(size) { func(this[it]) }
+fun Iterator<IRExpression>.toEvaluable() = asSequence()
+        .map { it.toEvaluable() }
+        .iterator()
 
-fun LambdaIRExpression.evaluate(memory: Memory) = object : StackSafeMFunction {
-    val closures = this@evaluate.closures.mapToArray { it.get(memory) }
+fun IRExpression.toEvaluable(): Evaluable = when (this) {
+    is PureIRExpression -> toEvaluable()
+    is LiteralIRExpression -> toEvaluable()
+    is IdentifierIRExpression -> toEvaluable()
+    is DefIRExpression -> toEvaluable()
+    is InvokeIRExpression -> toEvaluable()
+    is LambdaIRExpression -> toEvaluable()
+    is IfIRExpression -> toEvaluable()
+    is DoIRExpression -> toEvaluable()
+    is QuasiquoteIRExpression -> toEvaluable()
+    is UnquoteIRExpression -> throw Exception("Unquote cannot be evaluated in a non-quasiquoted context")
+    is UnquoteSplicingIRExpression -> throw Exception("UnquoteSplicing cannot be evaluated in a non-quasiquoted context")
+}
 
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun i(arg: Any): Trampoline {
-        for (it in closures) {
-            memory.stack.push(it)
-        }
-        memory.stack.push(arg)
-        val ret = value.evalT(memory)
-        memory.stack.pop(closures.size)
-        memory.stack.pop()
-        return ret
+fun PureIRExpression.toEvaluable() = irExpression.toEvaluable().optimizePure()
+
+fun Evaluable.optimizePure() = object : Evaluable {
+    var value: Any? = null
+    override fun eval(memory: Memory): Any = value?.let { it } ?: run {
+        value = this@optimizePure.eval(memory)
+        value!!
     }
-
-    override fun invoke(arg: Any) = i(arg).it
-    override fun invokeStackSafe(arg: Any) = i(arg)
 }
 
-fun SimpleLambdaIRExpression.evaluate(memory: Memory) = object : StackSafeMFunction {
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun i(arg: Any): Trampoline {
-        memory.stack.push(arg)
-        val ret = value.evalT(memory)
-        memory.stack.pop()
-        return ret
+fun LiteralIRExpression.toEvaluable() = object : Evaluable {
+    override fun eval(memory: Memory) = literal
+}
+
+fun IdentifierIRExpression.toEvaluable() = object : Evaluable {
+    @JvmField val accessibleMemoryLocation = memoryLocation.toAccessible()
+
+    override fun eval(memory: Memory) = accessibleMemoryLocation.get(memory)
+}
+
+fun DefIRExpression.toEvaluable() = object : Evaluable {
+    @JvmField val accessibleMemoryLocation = memoryLocation.toAccessible()
+    @JvmField val evaluableExpression = expression.toEvaluable()
+
+    override fun eval(memory: Memory) {
+        accessibleMemoryLocation.set(memory, evaluableExpression.eval(memory))
     }
-
-    override fun invoke(arg: Any) = i(arg).it
-    override fun invokeStackSafe(arg: Any) = i(arg)
 }
 
-fun IfIRExpression.evaluate(memory: Memory) = if (condition.eval(memory) as Boolean)
-    ifTrue.eval(memory)
-else
-    ifFalse.eval(memory)
+fun InvokeIRExpression.toEvaluable() = object : Evaluable {
+    @JvmField val evaluableExpression = expression.toEvaluable()
+    @JvmField val evaluableArg = arg.toEvaluable()
 
-fun IfIRExpression.evaluateT(memory: Memory) = if (condition.eval(memory) as Boolean)
-    ifTrue.evalT(memory)
-else
-    ifFalse.evalT(memory)
+    override fun eval(memory: Memory) = Intrinsics.evaluateCall(
+            evaluableExpression.eval(memory),
+            evaluableArg.eval(memory)
+    )
 
-fun DoIRExpression.evaluate(memory: Memory): Any {
-    expressions.forEach { it.eval(memory) }
-    return value.eval(memory)
+    override fun evalT(memory: Memory): Trampoline {
+        val expression = evaluableExpression.eval(memory)
+        val arg = evaluableArg.eval(memory)
+        return if (expression is StackSafeMFunction)
+            Trampoline.Deferred { expression.invokeStackSafe(arg) }
+        else
+            Trampoline.Just(Intrinsics.evaluateCall(expression, arg))
+    }
 }
 
-fun DoIRExpression.evaluateT(memory: Memory): Trampoline {
-    expressions.forEach { it.eval(memory) }
-    return value.evalT(memory)
-}
+fun LambdaIRExpression.toEvaluable() = if (closures.isEmpty())
+    object : Evaluable {
+        override fun eval(memory: Memory) = object : StackSafeMFunction {
+            @JvmField val evaluableValue = value.toEvaluable()
 
-@Suppress("NOTHING_TO_INLINE", "HasPlatformType")
-inline fun InvokeIRExpression.evaluate(memory: Memory) = Intrinsics.evaluateInvoke(this, memory)
-
-fun InvokeIRExpression.evaluateT(memory: Memory): Trampoline {
-    val expression = expression.eval(memory)
-    val arg = arg.eval(memory)
-    return if (expression is StackSafeMFunction)
-        Trampoline.Deferred { expression.invokeStackSafe(arg) }
-    else
-        Trampoline.Just(Intrinsics.evaluateCall(expression, arg))
-}
-
-fun QuasiquoteIRExpression.evaluate(memory: Memory): Any {
-    var cons: ConsList<*> = Nil
-    irExpressions.forEach {
-        when (it) {
-            is UnquoteIRExpression -> {
-                cons = ConsCell(it.eval(memory), cons)
+            @Suppress("NOTHING_TO_INLINE")
+            private inline fun i(arg: Any): Trampoline {
+                memory.stack.push(arg)
+                val ret = evaluableValue.evalT(memory)
+                memory.stack.pop()
+                return ret
             }
-            is UnquoteSplicingIRExpression -> {
-                it.eval(memory).let {
-                    if (it is ConsList<*>) {
-                        it.reversed().forEach {
+
+            override fun invoke(arg: Any) = i(arg).it
+            override fun invokeStackSafe(arg: Any) = i(arg)
+        }
+    }.optimizePure()
+else
+    object : Evaluable {
+        @JvmField val accessibleClosures = closures.map { it.toAccessible() }
+
+        override fun eval(memory: Memory) = object : StackSafeMFunction {
+            @JvmField val evaluableValue = value.toEvaluable()
+            @JvmField val closures = accessibleClosures.mapToArray { it.get(memory) }
+
+            @Suppress("NOTHING_TO_INLINE")
+            private inline fun i(arg: Any): Trampoline {
+                for (it in closures) {
+                    memory.stack.push(it)
+                }
+                memory.stack.push(arg)
+                val ret = evaluableValue.evalT(memory)
+                memory.stack.pop(closures.size)
+                memory.stack.pop()
+                return ret
+            }
+
+            override fun invoke(arg: Any) = i(arg).it
+            override fun invokeStackSafe(arg: Any) = i(arg)
+        }
+    }
+
+fun IfIRExpression.toEvaluable() = object : Evaluable {
+    @JvmField val evaluableCondition = condition.toEvaluable()
+    @JvmField val evaluableIfTrue = ifTrue.toEvaluable()
+    @JvmField val evaluableIfFalse = ifFalse.toEvaluable()
+
+    override fun eval(memory: Memory) = if (evaluableCondition.eval(memory) as Boolean)
+        evaluableIfTrue.eval(memory)
+    else
+        evaluableIfFalse.eval(memory)
+
+    override fun evalT(memory: Memory) = if (evaluableCondition.eval(memory) as Boolean)
+        evaluableIfTrue.evalT(memory)
+    else
+        evaluableIfFalse.evalT(memory)
+}
+
+fun DoIRExpression.toEvaluable() = object : Evaluable {
+    @JvmField val evaluableExpressions = expressions.map { it.toEvaluable() }
+    @JvmField val evaluableValue = value.toEvaluable()
+
+    override fun eval(memory: Memory): Any {
+        for (it in evaluableExpressions) { it.eval(memory) }
+        return evaluableValue.eval(memory)
+    }
+
+    override fun evalT(memory: Memory): Trampoline {
+        for (it in evaluableExpressions) { it.eval(memory) }
+        return evaluableValue.evalT(memory)
+    }
+}
+
+private class EvaluableUnquoteExpression(val evaluable: Evaluable)
+private class EvaluableUnquoteSplicingExpression(val evaluable: Evaluable)
+
+fun QuasiquoteIRExpression.toEvaluable() = object : Evaluable {
+    @JvmField val evaluableIRExpressions = elements.map {
+        when (it) {
+            is UnquoteIRExpression -> EvaluableUnquoteExpression(it.irExpression.toEvaluable())
+            is UnquoteSplicingIRExpression -> EvaluableUnquoteSplicingExpression(it.irExpression.toEvaluable())
+            else -> it
+        }
+    }
+
+    override fun eval(memory: Memory): Any {
+        var cons: ConsList<*> = Nil
+        evaluableIRExpressions.forEach {
+            when (it) {
+                is EvaluableUnquoteExpression -> {
+                    cons = ConsCell(it.evaluable.eval(memory), cons)
+                }
+                is EvaluableUnquoteSplicingExpression -> {
+                    it.evaluable.eval(memory).let {
+                        if (it is ConsList<*>) {
+                            for (e in it.reversed()) {
+                                cons = ConsCell(e, cons)
+                            }
+                        } else {
                             cons = ConsCell(it, cons)
                         }
-                    } else {
-                        cons = ConsCell(it, cons)
                     }
                 }
-            }
-            else -> {
-                cons = ConsCell(it, cons)
+                else -> {
+                    cons = ConsCell(it, cons)
+                }
             }
         }
+        return cons
     }
-    return cons
 }
