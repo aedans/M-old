@@ -177,18 +177,37 @@ fun generateQuasiquoteIR(table: SymbolTable, expr: Expression) = expr.takeIfInst
 fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpression
         .takeIfInstance<SExpression>()
         ?.let {
-            val expression = when (it.size) {
-                1, 2 -> it[0].toIRExpression(symbolTable)
-                else -> it.take(it.size - 1).toConsList().toIRExpression(symbolTable)
+            if (it.size == 3 && it[0] is IdentifierExpression && (it[0] as IdentifierExpression).name in listOf(
+                    "|", "&", "=",
+                    "+i", "-i", "*i", "/i",
+                    "+l", "-l", "*l", "/l",
+                    "+f", "-f", "*f", "/f",
+                    "+d", "-d", "*d", "/d",
+                    "+", "-", "*", "/",
+                    "<i", ">i",
+                    "<l", ">l",
+                    "<f", ">f",
+                    "<d", ">d",
+                    "<", ">")) {
+                BinaryOperatorIRExpression(
+                        (it[0] as IdentifierExpression).name,
+                        it[1].toIRExpression(symbolTable),
+                        it[2].toIRExpression(symbolTable)
+                )
+            } else {
+                val expression = when (it.size) {
+                    1, 2 -> it[0].toIRExpression(symbolTable)
+                    else -> it.take(it.size - 1).toConsList().toIRExpression(symbolTable)
+                }
+                val arg = when (it.size) {
+                    1 -> NilLiteralIRExpression
+                    else -> it.last().toIRExpression(symbolTable)
+                }
+                if (expression is InvokeIRExpression
+                        && expression.expression.isPure
+                        && expression.arg.isPure)
+                    InvokeIRExpression(PureIRExpression(expression), arg)
+                else
+                    InvokeIRExpression(expression, arg)
             }
-            val arg = when (it.size) {
-                1 -> NilLiteralIRExpression
-                else -> it.last().toIRExpression(symbolTable)
-            }
-            if (expression is InvokeIRExpression
-                    && expression.expression.isPure
-                    && expression.arg.isPure)
-                InvokeIRExpression(PureIRExpression(expression), arg)
-            else
-                InvokeIRExpression(expression, arg)
         }

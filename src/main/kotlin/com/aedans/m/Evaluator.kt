@@ -83,6 +83,12 @@ sealed class Trampoline {
 interface Evaluable {
     fun eval(memory: Memory): Any
     fun evalT(memory: Memory): Trampoline = Trampoline.Just(eval(memory))
+
+    companion object {
+        inline operator fun invoke(crossinline eval: (Memory) -> Any) = object : Evaluable {
+            override fun eval(memory: Memory) = eval(memory)
+        }
+    }
 }
 
 fun Iterator<IRExpression>.toEvaluable() = asSequence()
@@ -99,6 +105,7 @@ fun IRExpression.toEvaluable(): Evaluable = when (this) {
     is IfIRExpression -> toEvaluable()
     is DoIRExpression -> toEvaluable()
     is QuasiquoteIRExpression -> toEvaluable()
+    is BinaryOperatorIRExpression -> toEvaluable()
     is UnquoteIRExpression -> throw Exception("Unquote cannot be evaluated in a non-quasiquoted context")
     is UnquoteSplicingIRExpression -> throw Exception("UnquoteSplicing cannot be evaluated in a non-quasiquoted context")
 }
@@ -260,5 +267,46 @@ fun QuasiquoteIRExpression.toEvaluable() = object : Evaluable {
             }
         }
         return cons
+    }
+}
+
+private inline fun <reified T> binaryOperator(
+        ea1: Evaluable,
+        ea2: Evaluable,
+        crossinline lambda: (T, T) -> Any
+) = Evaluable { lambda(ea1.eval(it) as T, ea2.eval(it) as T) }
+
+fun BinaryOperatorIRExpression.toEvaluable(): Evaluable {
+    val ea1 = a1.toEvaluable()
+    val ea2 = a2.toEvaluable()
+    return when (operator) {
+        "|" -> binaryOperator(ea1, ea2, Boolean::or)
+        "&" -> binaryOperator(ea1, ea2, Boolean::and)
+        "=" -> binaryOperator(ea1, ea2, Any::equals)
+        "+", "+i" -> binaryOperator<Int>(ea1, ea2, Int::plus)
+        "-", "-i" -> binaryOperator<Int>(ea1, ea2, Int::minus)
+        "*", "*i" -> binaryOperator<Int>(ea1, ea2, Int::times)
+        "/", "/i" -> binaryOperator<Int>(ea1, ea2, Int::div)
+        "+l" -> binaryOperator<Long>(ea1, ea2, Long::plus)
+        "-l" -> binaryOperator<Long>(ea1, ea2, Long::minus)
+        "*l" -> binaryOperator<Long>(ea1, ea2, Long::times)
+        "/l" -> binaryOperator<Long>(ea1, ea2, Long::div)
+        "+f" -> binaryOperator<Float>(ea1, ea2, Float::plus)
+        "-f" -> binaryOperator<Float>(ea1, ea2, Float::minus)
+        "*f" -> binaryOperator<Float>(ea1, ea2, Float::times)
+        "/f" -> binaryOperator<Float>(ea1, ea2, Float::div)
+        "+d" -> binaryOperator<Double>(ea1, ea2, Double::plus)
+        "-d" -> binaryOperator<Double>(ea1, ea2, Double::minus)
+        "*d" -> binaryOperator<Double>(ea1, ea2, Double::times)
+        "/d" -> binaryOperator<Double>(ea1, ea2, Double::div)
+        "<", "<i" -> binaryOperator<Int>(ea1, ea2) { a, b -> a < b }
+        ">", ">i" -> binaryOperator<Int>(ea1, ea2) { a, b -> a > b }
+        "<l" -> binaryOperator<Long>(ea1, ea2) { a, b -> a < b }
+        ">l" -> binaryOperator<Long>(ea1, ea2) { a, b -> a > b }
+        "<f" -> binaryOperator<Float>(ea1, ea2) { a, b -> a < b }
+        ">f" -> binaryOperator<Float>(ea1, ea2) { a, b -> a > b }
+        "<d" -> binaryOperator<Double>(ea1, ea2) { a, b -> a < b }
+        ">d" -> binaryOperator<Double>(ea1, ea2) { a, b -> a > b }
+        else -> throw Exception("Unrecognized operator $operator")
     }
 }

@@ -74,3 +74,11 @@ data class UnquoteIRExpression(val irExpression: IRExpression) : IRExpression() 
 data class UnquoteSplicingIRExpression(val irExpression: IRExpression) : IRExpression() {
     override fun toString() = "~$irExpression"
 }
+
+data class BinaryOperatorIRExpression(
+        val operator: String,
+        val a1: IRExpression,
+        val a2: IRExpression
+) : IRExpression() {
+    override fun toString() = "(OP $operator $a1 $a2)"
+}
