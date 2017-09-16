@@ -158,13 +158,13 @@ val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
   (lambda (list x)
     (if (= x 0)
       (car list)
-      (get (cdr list) (- x 1)))))
+      (get (cdr list) (-i x 1)))))
 
 (def drop
   (lambda (list x)
     (if (= x 0)
       list
-      (drop (cdr list) (- x 1)))))
+      (drop (cdr list) (-i x 1)))))
 
 (def let
   (macro
@@ -236,8 +236,8 @@ val tailCall1 by TestType.SuccessTest("0") src """
 (def recursion-test
   (lambda (x)
     (do
-      (if (< x 100000)
-        (recursion-test (+ x 1))
+      (if (<i x 100000)
+        (recursion-test (+i x 1))
         0))))
 
 (println stdout (recursion-test 0))
@@ -247,15 +247,15 @@ val tailCall2 by TestType.SuccessTest("0") src """
 (def recursion-test2 nil)
 (def recursion-test1
   (lambda (x)
-    (if (< x 100000)
-      (do (recursion-test2 (+ x 1)))
+    (if (<i x 100000)
+      (do (recursion-test2 (+i x 1)))
       0)))
 
 (def recursion-test2
   (lambda (x)
     (do
-      (if (< x 100000)
-        (recursion-test1 (+ x 1))
+      (if (<i x 100000)
+        (recursion-test1 (+i x 1))
         0))))
 
 (println stdout (recursion-test1 0))
@@ -265,14 +265,14 @@ val tailCall3 by TestType.SuccessTest("1") src """
 (def recursion-test2 nil)
 (def recursion-test1
   (lambda (x)
-    (if (< x 100000)
-      (lambda (y) (recursion-test2 (+ x y) 1))
+    (if (<i x 100000)
+      (lambda (y) (recursion-test2 (+i x y) 1))
       (lambda (x) x))))
 
 (def recursion-test2
   (lambda (x)
-    (if (< x 100000)
-      (lambda (y) (recursion-test1 (+ x y) 1))
+    (if (<i x 100000)
+      (lambda (y) (recursion-test1 (+i x y) 1))
       (lambda (x) x))))
 
 (println stdout (recursion-test1 0 1))
@@ -315,7 +315,7 @@ class java.lang.Double
 """
 
 val plusString by TestType.SuccessTest("(Int) -> (Int) -> Int") src """
-(println stdout +)
+(println stdout +i)
 """
 
 val fibonacci by TestType.SuccessTest("""
@@ -337,11 +337,11 @@ val fibonacci by TestType.SuccessTest("""
       0
     (if (= x 1)
       1
-    (+ (fib (- x 1)) (fib (- x 2)))))))
+    (+i (fib (-i x 1)) (fib (-i x 2)))))))
 
 (def loop
   (lambda (x f)
-    (if (= x 0) f (loop (- x 1) f)) (f x)))
+    (if (= x 0) f (loop (-i x 1) f)) (f x)))
 
 (loop 10
   (lambda (x)

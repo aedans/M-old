@@ -132,7 +132,7 @@ fun tokenizeNumberLiteral(str: LookaheadIterator<Char>): NumberLiteralToken? {
     }
 }
 
-private fun isIdentifierHead(it: Char) = it in 'a'..'z' || it in 'A'..'Z' || it in "_.:!?+-*/=<>|&"
+private fun isIdentifierHead(it: Char) = it in 'a'..'z' || it in 'A'..'Z' || it in "_.:~!@#$%^?+-*/=<>|&"
 private fun isIdentifierTail(it: Char) = isIdentifierHead(it) || it in '0'..'9'
 
 class IdentifierToken(name: String) : Token(name)

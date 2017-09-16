@@ -283,24 +283,28 @@ fun BinaryOperatorIRExpression.toEvaluable(): Evaluable {
         "|" -> binaryOperator(ea1, ea2, Boolean::or)
         "&" -> binaryOperator(ea1, ea2, Boolean::and)
         "=" -> binaryOperator(ea1, ea2, Any::equals)
-        "+", "+i" -> binaryOperator<Int>(ea1, ea2, Int::plus)
-        "-", "-i" -> binaryOperator<Int>(ea1, ea2, Int::minus)
-        "*", "*i" -> binaryOperator<Int>(ea1, ea2, Int::times)
-        "/", "/i" -> binaryOperator<Int>(ea1, ea2, Int::div)
+        "+i" -> binaryOperator<Int>(ea1, ea2, Int::plus)
+        "-i" -> binaryOperator<Int>(ea1, ea2, Int::minus)
+        "*i" -> binaryOperator<Int>(ea1, ea2, Int::times)
+        "/i" -> binaryOperator<Int>(ea1, ea2, Int::div)
+        "%i" -> binaryOperator<Int>(ea1, ea2, Int::rem)
         "+l" -> binaryOperator<Long>(ea1, ea2, Long::plus)
         "-l" -> binaryOperator<Long>(ea1, ea2, Long::minus)
         "*l" -> binaryOperator<Long>(ea1, ea2, Long::times)
         "/l" -> binaryOperator<Long>(ea1, ea2, Long::div)
+        "%l" -> binaryOperator<Long>(ea1, ea2, Long::rem)
         "+f" -> binaryOperator<Float>(ea1, ea2, Float::plus)
         "-f" -> binaryOperator<Float>(ea1, ea2, Float::minus)
         "*f" -> binaryOperator<Float>(ea1, ea2, Float::times)
         "/f" -> binaryOperator<Float>(ea1, ea2, Float::div)
+        "%f" -> binaryOperator<Float>(ea1, ea2, Float::rem)
         "+d" -> binaryOperator<Double>(ea1, ea2, Double::plus)
         "-d" -> binaryOperator<Double>(ea1, ea2, Double::minus)
         "*d" -> binaryOperator<Double>(ea1, ea2, Double::times)
         "/d" -> binaryOperator<Double>(ea1, ea2, Double::div)
-        "<", "<i" -> binaryOperator<Int>(ea1, ea2) { a, b -> a < b }
-        ">", ">i" -> binaryOperator<Int>(ea1, ea2) { a, b -> a > b }
+        "%d" -> binaryOperator<Double>(ea1, ea2, Double::rem)
+        "<i" -> binaryOperator<Int>(ea1, ea2) { a, b -> a < b }
+        ">i" -> binaryOperator<Int>(ea1, ea2) { a, b -> a > b }
         "<l" -> binaryOperator<Long>(ea1, ea2) { a, b -> a < b }
         ">l" -> binaryOperator<Long>(ea1, ea2) { a, b -> a > b }
         "<f" -> binaryOperator<Float>(ea1, ea2) { a, b -> a < b }

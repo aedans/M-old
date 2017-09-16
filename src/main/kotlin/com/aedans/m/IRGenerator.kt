@@ -179,16 +179,14 @@ fun generateInvokeIR(symbolTable: SymbolTable, sExpression: Expression) = sExpre
         ?.let {
             if (it.size == 3 && it[0] is IdentifierExpression && (it[0] as IdentifierExpression).name in listOf(
                     "|", "&", "=",
-                    "+i", "-i", "*i", "/i",
-                    "+l", "-l", "*l", "/l",
-                    "+f", "-f", "*f", "/f",
-                    "+d", "-d", "*d", "/d",
-                    "+", "-", "*", "/",
+                    "+i", "-i", "*i", "/i", "%i",
+                    "+l", "-l", "*l", "/l", "%l",
+                    "+f", "-f", "*f", "/f", "%f",
+                    "+d", "-d", "*d", "/d", "%d",
                     "<i", ">i",
                     "<l", ">l",
                     "<f", ">f",
-                    "<d", ">d",
-                    "<", ">")) {
+                    "<d", ">d")) {
                 BinaryOperatorIRExpression(
                         (it[0] as IdentifierExpression).name,
                         it[1].toIRExpression(symbolTable),

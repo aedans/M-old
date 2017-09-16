@@ -44,22 +44,22 @@ fun getDefaultRuntimeEnvironment(
     env.setVar("-i", mFunction<Int, Int, Int>(Int::minus))
     env.setVar("*i", mFunction<Int, Int, Int>(Int::times))
     env.setVar("/i", mFunction<Int, Int, Int>(Int::div))
+    env.setVar("%i", mFunction<Int, Int, Int>(Int::rem))
     env.setVar("+l", mFunction<Long, Long, Long>(Long::plus))
     env.setVar("-l", mFunction<Long, Long, Long>(Long::minus))
     env.setVar("*l", mFunction<Long, Long, Long>(Long::times))
     env.setVar("/l", mFunction<Long, Long, Long>(Long::div))
+    env.setVar("%l", mFunction<Long, Long, Long>(Long::rem))
     env.setVar("+f", mFunction<Float, Float, Float>(Float::plus))
     env.setVar("-f", mFunction<Float, Float, Float>(Float::minus))
     env.setVar("*f", mFunction<Float, Float, Float>(Float::times))
     env.setVar("/f", mFunction<Float, Float, Float>(Float::div))
+    env.setVar("%f", mFunction<Float, Float, Float>(Float::rem))
     env.setVar("+d", mFunction<Double, Double, Double>(Double::plus))
     env.setVar("-d", mFunction<Double, Double, Double>(Double::minus))
     env.setVar("*d", mFunction<Double, Double, Double>(Double::times))
     env.setVar("/d", mFunction<Double, Double, Double>(Double::div))
-
-    listOf("+", "-", "*", "/").forEach {
-        env.setVar(it, env.getVar(it + "i")!!)
-    }
+    env.setVar("%d", mFunction<Double, Double, Double>(Double::rem))
 
     env.setVar("<i", mFunction { x: Int, y: Int -> x < y })
     env.setVar(">i", mFunction { x: Int, y: Int -> x > y })
@@ -69,8 +69,6 @@ fun getDefaultRuntimeEnvironment(
     env.setVar(">f", mFunction { x: Float, y: Float -> x > y })
     env.setVar("<d", mFunction { x: Double, y: Double -> x < y })
     env.setVar(">d", mFunction { x: Double, y: Double -> x > y })
-    env.setVar(">", env.getVar(">i")!!)
-    env.setVar("<", env.getVar("<i")!!)
 
     env.setVar("stdin", `in`)
     env.setVar("stdout", out)

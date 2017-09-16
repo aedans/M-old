@@ -1,5 +1,5 @@
 .kobalt
-*.m
 *.iml
 *.xml
+/*.m
 kobaltBuild
