@@ -166,19 +166,17 @@ val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
       list
       (drop (cdr list) (-i x 1)))))
 
-(def let
-  (macro
-    (lambda (x)
-      `((lambda (,(get x 0)) ~(drop x 2)) ,(get x 1)))))
+(defmacro let
+  (lambda (x)
+    `((lambda (,(get x 0)) ~(drop x 2)) ,(get x 1))))
 
 (let hello "Hello, world!" (print stdout hello))
 """
 
 val helloWorld11 by TestType.SuccessTest("Hello, world!") src """
-(def proc
-  (macro
-    (lambda (x)
-      `(lambda (_) ~x))))
+(defmacro proc
+  (lambda (x)
+    `(lambda (_) ~x)))
 
 ((proc (println stdout "Hello, world!"))
 """
@@ -287,12 +285,11 @@ val list by TestType.SuccessTest("(1 2 3)") src """
   (lambda (object)
     (= object nil)))
 
-(def list
-  (macro
-    (lambda (x)
-      (if (nil? x)
-        nil
-        `(cons ,(car x) ,(list (cdr x)))))))
+(defmacro list
+  (lambda (x)
+    (if (nil? x)
+      nil
+      `(cons ,(car x) (list ~(cdr x))))))
 
 (print stdout (list 1 2 3))
 """

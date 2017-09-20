@@ -56,11 +56,11 @@ Each expression in the list preceded by a tilde will be evaluated and merged int
 
 ### Fundamental Values
 
+- `defmacro` Takes a name and a lambda as an argument, defines a macro with the given name and argument
+- `include` Includes the package with the given name
 - `true` Evaluates to true
 - `false` Evaluates to false
 - `nil` Evaluates to nil
-- `macro` Takes a lambda as an argument, returns a macro
-- `macroexpand` Takes an expression as an argument, returns the expression with all macros expanded
 - `cons` Creates a cons cell from two values
 - `car` Gets the first value from a cons cell
 - `cdr` Gets the second value from a cons cell
@@ -68,10 +68,11 @@ Each expression in the list preceded by a tilde will be evaluated and merged int
 - `|` Takes two arguments, returns true if both arguments are true
 - `&` Takes two arguments, returns true if either argument is true
 - `=` Takes two arguments, returns true if both arguments are equal
-- `+(i/l/f/d)?` Takes two arguments, returns their sum. i/l/f/d to specify the return type.
-- `-(i/l/f/d)?` Takes two arguments, returns their difference. i/l/f/d to specify the return type.
-- `*(i/l/f/d)?` Takes two arguments, returns their product. i/l/f/d to specify the return type.
-- `/(i/l/f/d)?` Takes two arguments, returns their quotient. i/l/f/d to specify the return type.
+- `+(i/l/f/d)` Takes two arguments, returns their sum. i/l/f/d to specify the return type
+- `-(i/l/f/d)` Takes two arguments, returns their difference. i/l/f/d to specify the return type
+- `*(i/l/f/d)` Takes two arguments, returns their product. i/l/f/d to specify the return type
+- `/(i/l/f/d)` Takes two arguments, returns their quotient. i/l/f/d to specify the return type
+- `macroexpand` Takes an expression as an argument, returns the expression with all macros expanded
 - `read` Takes an input stream, returns the next char in the input stream
 - `write` Takes an output stream and a char, writes the char to the output stream
 - `stdout` The standard output stream

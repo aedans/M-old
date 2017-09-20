@@ -1,5 +1,6 @@
 package com.aedans.m
 
+import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.PrintStream
@@ -27,9 +28,6 @@ fun getDefaultRuntimeEnvironment(
     env.setVar("true", true)
     env.setVar("false", false)
     env.setVar("nil", Nil)
-
-    env.setVar("macro", mFunction(::mMacro))
-    env.setVar("macroexpand", mMacro { QuoteExpression((it as SExpression).car.expand(env)) })
 
     env.setVar("cons", mFunction<Any, ConsList<Any>, ConsList<Any>>(::ConsCell))
     env.setVar("car", mFunction(ConsList<Any>::car))
@@ -75,6 +73,36 @@ fun getDefaultRuntimeEnvironment(
     env.setVar("stderr", err)
     env.setVar("write", mFunction<OutputStream, Char, Unit> { p, c -> p.write(c.toInt()) })
     env.setVar("read", mFunction<InputStream, Char> { i -> i.read().toChar() })
+
+    env.setVar("defmacro", Macro { it: Any ->
+        val name = ((it as ConsList<*>).car as IdentifierExpression).name
+        val lambda = it.cdr.car as ConsList<*>
+        @Suppress("UNCHECKED_CAST")
+        val macro = Macro(lambda.toIRExpression(env.symbolTable).toEvaluable().eval(env.memory) as MFunction)
+        env.setVar(name, macro)
+        Nil
+    })
+
+    env.setVar("include", Macro { it: Any ->
+        val name = (it as ConsList<*>).car as String
+        val file = File(name).absoluteFile
+        if (file.isDirectory)
+            file
+                    .listFiles()
+                    .map { listOf(IdentifierExpression("include"), "$file/${it.nameWithoutExtension}").toConsList() }
+                    .let { ConsCell(IdentifierExpression("do"), it.toConsList()) }
+        else
+            File(file.absolutePath + ".m")
+                    .reader()
+                    .iterator()
+                    .lookaheadIterator()
+                    .parse()
+                    .asSequence()
+                    .toList()
+                    .let { ConsCell(IdentifierExpression("do"), it.toConsList()) }
+    })
+
+    env.setVar("macroexpand", Macro { it: Any -> QuoteExpression((it as SExpression).car.expand(env)) })
 
     env.setVar("print", mFunction<OutputStream, Any, Unit> { p, o -> PrintStream(p).print(o) })
     env.setVar("println", mFunction<OutputStream, Any, Unit> { p, o -> PrintStream(p).println(o) })

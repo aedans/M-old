@@ -6,7 +6,7 @@ val m = project {
     name = "M"
     group = "com.aedans"
     artifactId = "m"
-    version = "0.14"
+    version = "0.17"
 
     dependencies {
         compile("org.jetbrains.kotlin:kotlin-runtime:1.1.2")

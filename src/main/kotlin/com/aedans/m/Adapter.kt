@@ -6,8 +6,6 @@ package com.aedans.m
 
 typealias MFunction = (Any) -> Any
 
-fun mMacro(mFunction: MFunction) = Macro(mFunction)
-
 inline fun <reified I, reified O> mFunction(
         crossinline mFunction: (I) -> O
 ) = object : (I) -> O {
@@ -23,24 +21,13 @@ inline fun <reified I1, reified I2, reified O> mFunction(
 }
 
 interface ConsList<out T : Any> : Iterable<T> {
-    val size: Int
     val car: T
     val cdr: ConsList<T>
-}
 
-object Nil : ConsList<Nothing> {
-    override val size = 0
-    override fun iterator() = emptyList<Nothing>().iterator()
-    override val car get() = throw IndexOutOfBoundsException()
-    override val cdr get() = throw IndexOutOfBoundsException()
-    override fun toString() = "nil"
-}
-
-data class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) : ConsList<T> {
-    override val size get(): Int = cdr.size + 1
+    val size get(): Int = cdr.size + 1
 
     override fun iterator() = object : Iterator<T> {
-        private var it: ConsList<T> = this@ConsCell
+        private var it: ConsList<T> = this@ConsList
         override fun hasNext() = it !== Nil
         override fun next(): T {
             @Suppress("UNCHECKED_CAST")
@@ -51,12 +38,23 @@ data class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList
         }
     }
 
-    override fun toString() = toString(true)
-    private fun toString(b: Boolean): String = if (b) "(${this.toString(false)})" else when (cdr) {
+    fun toString(b: Boolean): String = if (b) "(${this.toString(false)})" else when (cdr) {
         Nil -> "$car"
-        is ConsCell<*> -> "$car ${cdr.toString(false)}"
-        else -> "($car . $cdr)"
+        else -> "$car ${cdr.toString(false)}"
     }
+}
+
+object Nil : ConsList<Nothing> {
+    override val car get() = throw IndexOutOfBoundsException()
+    override val cdr get() = throw IndexOutOfBoundsException()
+    override val size = 0
+    override fun iterator() = emptyList<Nothing>().iterator()
+    override fun toString() = "nil"
+    override fun toString(b: Boolean) = toString()
+}
+
+data class ConsCell<out T : Any>(override val car: T, override val cdr: ConsList<T>) : ConsList<T> {
+    override fun toString() = toString(true)
 }
 
 fun Any.toConsListOrSelf() = when (this) {
