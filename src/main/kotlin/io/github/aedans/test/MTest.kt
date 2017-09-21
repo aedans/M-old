@@ -1,10 +1,10 @@
 @file:Suppress("unused")
 
-package com.aedans.test
+package io.github.aedans.test
 
-import com.aedans.m.getDefaultRuntimeEnvironment
-import com.aedans.m.interpret
-import com.aedans.m.mFunction
+import io.github.aedans.m.getDefaultRuntimeEnvironment
+import io.github.aedans.m.interpret
+import io.github.aedans.m.mFunction
 import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.properties.ReadOnlyProperty

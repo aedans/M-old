@@ -1,4 +1,4 @@
-package com.aedans.m
+package io.github.aedans.m
 
 import java.util.HashMap
 

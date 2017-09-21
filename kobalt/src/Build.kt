@@ -4,7 +4,7 @@ import com.beust.kobalt.project
 
 val m = project {
     name = "M"
-    group = "com.aedans"
+    group = "io.github.aedans"
     artifactId = "m"
     version = "0.17"
 
@@ -25,12 +25,12 @@ val m = project {
 
     application {
         taskName = "run"
-        mainClass = "com.aedans.m.CliKt"
+        mainClass = "io.github.aedans.m.CliKt"
         args("main.m")
     }
 
     application {
         taskName = "tst"
-        mainClass = "com.aedans.test.MTestKt"
+        mainClass = "io.github.aedans.test.MTestKt"
     }
 }

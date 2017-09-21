@@ -1,4 +1,4 @@
-package com.aedans.m;
+package io.github.aedans.m;
 
 import kotlin.jvm.functions.Function1;
 

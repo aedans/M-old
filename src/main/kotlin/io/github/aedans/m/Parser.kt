@@ -1,4 +1,4 @@
-package com.aedans.m
+package io.github.aedans.m
 
 /**
  * Created by Aedan Smith.
