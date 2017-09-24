@@ -1,5 +1,9 @@
 package io.github.aedans.m
 
+import io.github.aedans.cons.Cons
+import io.github.aedans.cons.Nil
+import io.github.aedans.cons.get
+import io.github.aedans.cons.size
 import java.util.HashMap
 
 /**
@@ -109,7 +113,8 @@ class ClosedSymbolTable(private val symbolTable: SymbolTable) : SymbolTable {
 fun generateLambdaIR(
         symbolTable: SymbolTable, expr: Expression
 ) = generateUniqueSExpressionIR(symbolTable, expr, "lambda") { environment, sExpression ->
-    val argNames = (sExpression[0] as ConsList<Expression>).map { (it as IdentifierExpression).name }
+    @Suppress("UNCHECKED_CAST")
+    val argNames = (sExpression[0] as Cons<Expression>).map { (it as IdentifierExpression).name }
     val expressions = sExpression.drop(1)
     generateLambdaIRExpression(environment, argNames, expressions)
 }
@@ -162,12 +167,12 @@ fun generateQuoteIR(expr: Expression) = expr.takeIfInstance<QuoteExpression>()?.
 fun generateQuasiquoteIR(table: SymbolTable, expr: Expression) = expr.takeIfInstance<QuasiquoteExpression>()?.let {
     when (it.cons) {
         Nil -> NilLiteralIRExpression
-        is ConsList<*> -> QuasiquoteIRExpression(it.cons.map {
+        is Cons<*> -> QuasiquoteIRExpression(it.cons.map {
             when (it) {
                 is UnquoteExpression -> UnquoteIRExpression(it.cons.toIRExpression(table))
                 is UnquoteSplicingExpression -> UnquoteSplicingIRExpression(it.cons.toIRExpression(table))
-                is ConsList<*> -> UnquoteIRExpression(QuasiquoteExpression(it).toIRExpression(table))
-                else -> it
+                is Cons<*> -> UnquoteIRExpression(QuasiquoteExpression(it).toIRExpression(table))
+                else -> it!!
             }
         }.reversed())
         else -> throw Exception("Cannot quasiquote ${it.cons}")

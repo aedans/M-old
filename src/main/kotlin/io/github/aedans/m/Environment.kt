@@ -1,5 +1,9 @@
 package io.github.aedans.m
 
+import io.github.aedans.cons.Cons
+import io.github.aedans.cons.Nil
+import io.github.aedans.cons.cons
+import io.github.aedans.cons.consOf
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -27,9 +31,9 @@ fun getDefaultRuntimeEnvironment(
     setVar("false", false)
     setVar("nil", Nil)
 
-    setVar("cons", mFunction<Any, ConsList<Any>, ConsList<Any>>(::ConsCell))
-    setVar("car", mFunction(ConsList<Any>::car))
-    setVar("cdr", mFunction(ConsList<Any>::cdr))
+    setVar("cons", mFunction<Any, Cons<Any>, Cons<Any>> { a, b -> a cons b })
+    setVar("car", mFunction(Cons<Any>::car))
+    setVar("cdr", mFunction(Cons<Any>::cdr))
 
     setVar("!", mFunction(Boolean::not))
     setVar("|", mFunction(Boolean::or))
@@ -73,8 +77,8 @@ fun getDefaultRuntimeEnvironment(
     setVar("read", mFunction<InputStream, Char> { i -> i.read().toChar() })
 
     setVar("defmacro", Macro { it: Any ->
-        val name = ((it as ConsList<*>).car as IdentifierExpression).name
-        val lambda = it.cdr.car as ConsList<*>
+        val name = ((it as Cons<*>).car as IdentifierExpression).name
+        val lambda = it.cdr.car as Cons<*>
         @Suppress("UNCHECKED_CAST")
         val macro = Macro(lambda.toIRExpression(symbolTable).toEvaluable().eval(memory) as MFunction)
         setVar(name, macro)
@@ -82,13 +86,13 @@ fun getDefaultRuntimeEnvironment(
     })
 
     setVar("include", Macro { it: Any ->
-        val name = (it as ConsList<*>).car as String
+        val name = (it as Cons<*>).car as String
         val file = File(name).absoluteFile
         if (file.isDirectory)
             file
                     .listFiles()
-                    .map { listOf(IdentifierExpression("include"), "$file/${it.nameWithoutExtension}").toConsList() }
-                    .let { ConsCell(IdentifierExpression("do"), it.toConsList()) }
+                    .map { consOf(IdentifierExpression("include"), "$file/${it.nameWithoutExtension}") }
+                    .let { consOf(IdentifierExpression("do"), it.toConsList()) }
         else
             File(file.absolutePath + ".m")
                     .reader()
@@ -97,10 +101,13 @@ fun getDefaultRuntimeEnvironment(
                     .parse()
                     .asSequence()
                     .toList()
-                    .let { ConsCell(IdentifierExpression("do"), it.toConsList()) }
+                    .let { consOf(IdentifierExpression("do"), it.toConsList()) }
     })
 
-    setVar("macroexpand", Macro { it: Any -> QuoteExpression((it as SExpression).car.expand(this)) })
+    setVar("macroexpand", Macro { it: Any ->
+        @Suppress("UNCHECKED_CAST")
+        QuoteExpression((it as SExpression).car.expand(this))
+    })
 
     setVar("print", mFunction<OutputStream, Any, Unit> { p, o -> PrintStream(p).print(o) })
     setVar("println", mFunction<OutputStream, Any, Unit> { p, o -> PrintStream(p).println(o) })

@@ -1,11 +1,13 @@
 package io.github.aedans.m
 
+import io.github.aedans.cons.Cons
+
 /**
  * Created by Aedan Smith.
  */
 
 typealias Expression = Any
-typealias SExpression = ConsList<Expression>
+typealias SExpression = Cons<Expression>
 
 fun Iterator<Token>.parse() = lookaheadIterator().parse()
 fun LookaheadIterator<Token>.parse() = collect { nextExpression() }

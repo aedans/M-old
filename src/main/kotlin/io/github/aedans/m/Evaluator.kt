@@ -1,5 +1,9 @@
 package io.github.aedans.m
 
+import io.github.aedans.cons.Cons
+import io.github.aedans.cons.Nil
+import io.github.aedans.cons.cons
+
 /**
  * Created by Aedan Smith.
  */
@@ -244,25 +248,25 @@ fun QuasiquoteIRExpression.toEvaluable() = object : Evaluable {
     }
 
     override fun eval(memory: Memory): Any {
-        var cons: ConsList<*> = Nil
+        var cons: Cons<*> = Nil
         evaluableIRExpressions.forEach {
             when (it) {
                 is EvaluableUnquoteExpression -> {
-                    cons = ConsCell(it.evaluable.eval(memory), cons)
+                    cons = it.evaluable.eval(memory) cons cons
                 }
                 is EvaluableUnquoteSplicingExpression -> {
                     it.evaluable.eval(memory).let {
-                        if (it is ConsList<*>) {
+                        if (it is Cons<*>) {
                             for (e in it.reversed()) {
-                                cons = ConsCell(e, cons)
+                                cons = e cons cons
                             }
                         } else {
-                            cons = ConsCell(it, cons)
+                            cons = it cons cons
                         }
                     }
                 }
                 else -> {
-                    cons = ConsCell(it, cons)
+                    cons = it cons cons
                 }
             }
         }

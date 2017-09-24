@@ -276,11 +276,11 @@ val tailCall3 by TestType.SuccessTest("1") src """
 (println stdout (recursion-test1 0 1))
 """
 
-val quote by TestType.SuccessTest("(nil 1 2 3 (4 5 6))") src """
+val quote by TestType.SuccessTest("[nil, 1, 2, 3, [4, 5, 6]]") src """
 (print stdout '(() 1 2 3 (4 5 6)))
 """
 
-val list by TestType.SuccessTest("(1 2 3)") src """
+val list by TestType.SuccessTest("[1, 2, 3]") src """
 (def nil?
   (lambda (object)
     (= object nil)))
