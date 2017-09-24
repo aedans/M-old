@@ -1,7 +1,6 @@
 package io.github.aedans.m
 
 import io.github.aedans.cons.Nil
-import io.github.aedans.cons.get
 
 /**
  * Created by Aedan Smith.

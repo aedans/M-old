@@ -2,8 +2,6 @@ package io.github.aedans.m
 
 import io.github.aedans.cons.Cons
 import io.github.aedans.cons.Nil
-import io.github.aedans.cons.get
-import io.github.aedans.cons.size
 import java.util.HashMap
 
 /**
