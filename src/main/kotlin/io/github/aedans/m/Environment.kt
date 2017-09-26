@@ -92,7 +92,7 @@ fun getDefaultRuntimeEnvironment(
             file
                     .listFiles()
                     .map { consOf(IdentifierExpression("include"), "$file/${it.nameWithoutExtension}") }
-                    .let { consOf(IdentifierExpression("do"), it.toConsList()) }
+                    .let { IdentifierExpression("do") cons it.toConsList() }
         else
             File(file.absolutePath + ".m")
                     .reader()
@@ -101,7 +101,7 @@ fun getDefaultRuntimeEnvironment(
                     .parse()
                     .asSequence()
                     .toList()
-                    .let { consOf(IdentifierExpression("do"), it.toConsList()) }
+                    .let { IdentifierExpression("do") cons it.toConsList() }
     })
 
     setVar("macroexpand", Macro { it: Any ->
