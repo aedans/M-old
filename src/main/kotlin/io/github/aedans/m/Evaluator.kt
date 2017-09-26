@@ -26,7 +26,11 @@ interface Accessible {
 fun MemoryLocation.toAccessible() = when (this) {
     is MemoryLocation.HeapPointer -> object : Accessible {
         @Suppress("HasPlatformType")
-        override fun get(memory: Memory) = memory.heap[index]
+        override fun get(memory: Memory) = let {
+            memory.heap = memory.heap.expand(index)
+            memory.heap[index]
+        }
+
         override fun set(memory: Memory, any: Any) = let {
             memory.heap = memory.heap.expand(index)
             memory.heap[index] = any
@@ -139,7 +143,10 @@ fun DefIRExpression.toEvaluable() = object : Evaluable {
     @JvmField val evaluableExpression = expression.toEvaluable()
 
     override fun eval(memory: Memory) {
-        accessibleMemoryLocation.set(memory, evaluableExpression.eval(memory))
+        if (accessibleMemoryLocation.get(memory) == Nil)
+            accessibleMemoryLocation.set(memory, evaluableExpression.eval(memory))
+        else
+            throw Exception("Cannot redefine $accessibleMemoryLocation")
     }
 }
 

@@ -5,13 +5,14 @@ A Minimal Lisp.
 ### Fundamental Forms
 
 ```
-(def <identifier> <expression>)
+(def <identifier> <expression>?)
 ```
 
 Evaluates to Unit.
 Defines a global variable with name identifier and value expression.
-Shadows previously defined variables.
 Identifier must be an atom.
+If there is no expression, defines identifier as nil. 
+Identifiers defined as nil can be redefined later.
 
 ```
 (lambda (<identifier>+) <expression>+)

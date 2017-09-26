@@ -143,17 +143,6 @@ val helloWorld8 by TestType.SuccessTest("Hello, world!") src """
 """
 
 val helloWorld9 by TestType.SuccessTest("Hello, world!") src """
-(def x "Hello")
-(print stdout x)
-(def x ", ")
-(print stdout x)
-(def x "world")
-(print stdout x)
-(def x "!")
-(print stdout x)
-"""
-
-val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
 (def get
   (lambda (list x)
     (if (= x 0)
@@ -173,7 +162,7 @@ val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
 (let hello "Hello, world!" (print stdout hello))
 """
 
-val helloWorld11 by TestType.SuccessTest("Hello, world!") src """
+val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
 (defmacro proc
   (lambda (x)
     `(lambda (_) ~x)))
@@ -181,7 +170,7 @@ val helloWorld11 by TestType.SuccessTest("Hello, world!") src """
 ((proc (println stdout "Hello, world!"))
 """
 
-val helloWorld12 by TestType.SuccessTest("Hello, world!") src """
+val helloWorld11 by TestType.SuccessTest("Hello, world!") src """
 (def a
   (lambda (x)
     (print stdout x)))
@@ -201,7 +190,7 @@ val helloWorld12 by TestType.SuccessTest("Hello, world!") src """
 (a \!)
 """
 
-val helloWorld13 by TestType.SuccessTest("Hello, world!") src """
+val helloWorld12 by TestType.SuccessTest("Hello, world!") src """
 (print stdout
   (do
     (print stdout "Hello, ")
@@ -209,7 +198,7 @@ val helloWorld13 by TestType.SuccessTest("Hello, world!") src """
     "!"))
 """
 
-val helloWorld14 by TestType.SuccessTest("Hello, world!") src """
+val helloWorld13 by TestType.SuccessTest("Hello, world!") src """
 (do
   (def hello "Hello")
   (def comma ", ")
@@ -242,7 +231,7 @@ val tailCall1 by TestType.SuccessTest("0") src """
 """
 
 val tailCall2 by TestType.SuccessTest("0") src """
-(def recursion-test2 nil)
+(def recursion-test2)
 (def recursion-test1
   (lambda (x)
     (if (<i x 100000)
@@ -260,7 +249,7 @@ val tailCall2 by TestType.SuccessTest("0") src """
 """
 
 val tailCall3 by TestType.SuccessTest("1") src """
-(def recursion-test2 nil)
+(def recursion-test2)
 (def recursion-test1
   (lambda (x)
     (if (<i x 100000)
@@ -281,9 +270,7 @@ val quote by TestType.SuccessTest("[nil, 1, 2, 3, [4, 5, 6]]") src """
 """
 
 val list by TestType.SuccessTest("[1, 2, 3]") src """
-(def nil?
-  (lambda (object)
-    (= object nil)))
+(def nil? (= nil))
 
 (defmacro list
   (lambda (x)

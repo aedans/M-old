@@ -80,7 +80,7 @@ fun generateDefIR(
         symbolTable: SymbolTable, expr: Expression
 ) = generateUniqueSExpressionIR(symbolTable, expr, "def") { _, sExpression ->
     val name = (sExpression[0] as IdentifierExpression).name
-    val expression = sExpression[1]
+    val expression = if (sExpression.size == 2) sExpression[1] else Nil
     val location = symbolTable.allocateLocation(name)
     symbolTable.setLocation(name, location)
     DefIRExpression(expression.toIRExpression(symbolTable), location)
