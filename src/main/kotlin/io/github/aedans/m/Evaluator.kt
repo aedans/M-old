@@ -184,6 +184,8 @@ fun LambdaIRExpression.toEvaluable() = if (closures.isEmpty())
 
             override fun invoke(arg: Any) = i(arg).it
             override fun invokeStackSafe(arg: Any) = i(arg)
+
+            override fun toString() = "(Any) -> Any"
         }
     }.optimizePure()
 else
@@ -208,6 +210,8 @@ else
 
             override fun invoke(arg: Any) = i(arg).it
             override fun invokeStackSafe(arg: Any) = i(arg)
+
+            override fun toString() = "(Any) -> Any"
         }
     }
 
