@@ -9,7 +9,9 @@ import java.io.PrintStream
 
 object Repl : Runnable {
     override fun run() {
-        run(getDefaultRuntimeEnvironment())
+        run(getDefaultRuntimeEnvironment().apply {
+            setVar("exit", mFunction { _: Any -> System.exit(0) })
+        })
     }
 
     private tailrec fun run(environment: RuntimeEnvironment,

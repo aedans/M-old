@@ -1,5 +1,5 @@
-import com.beust.kobalt.plugin.application.application
 import com.beust.kobalt.plugin.packaging.assemble
+import com.beust.kobalt.plugin.packaging.install
 import com.beust.kobalt.project
 
 val m = project {
@@ -19,18 +19,11 @@ val m = project {
         jar {
             name = "M.jar"
             fatJar = true
-            addAttribute("Main-Class", "com.aedans.m.CliKt")
+            addAttribute("Main-Class", "io.github.aedans.m.CliKt")
         }
     }
 
-    application {
-        taskName = "run"
-        mainClass = "io.github.aedans.m.CliKt"
-        args("main.m")
-    }
+    install {
 
-    application {
-        taskName = "tst"
-        mainClass = "io.github.aedans.test.MTestKt"
     }
 }
