@@ -3,5 +3,4 @@
 *.xml
 /*.m
 kobaltBuild
-std
 libs

@@ -2,6 +2,7 @@ package io.github.aedans.m
 
 import io.github.aedans.cons.Cons
 import io.github.aedans.cons.Nil
+import io.github.aedans.cons.toCons
 import java.util.HashMap
 
 /**
@@ -40,7 +41,7 @@ fun Expression.toIRExpression(symbolTable: SymbolTable): IRExpression = null ?:
         generateQuoteIR(this) ?:
         generateQuasiquoteIR(symbolTable, this) ?:
         generateInvokeIR(symbolTable, this) ?:
-        throw Exception("Unexpected expression ${this}")
+        throw Exception("Unexpected expression $this")
 
 private inline fun <reified T : Expression> generateLiteralIR(
         expression: Expression, irExpression: LiteralIRExpression
@@ -63,8 +64,10 @@ private inline fun generateUniqueSExpressionIR(
 
 fun generateNilLiteralIR(expression: Expression) = generateLiteralIR<Nil>(expression, NilLiteralIRExpression)
 fun generateCharLiteralIR(expression: Expression) = generateLiteralIR<CharLiteralExpression>(expression)
-fun generateStringLiteralIR(expression: Expression) = generateLiteralIR<StringLiteralExpression>(expression)
 fun generateNumberLiteralIR(expression: Expression) = generateLiteralIR<NumberLiteralExpression>(expression)
+
+fun generateStringLiteralIR(expression: Expression) = expression.takeIfInstance<StringLiteralExpression>()
+        ?.let { LiteralIRExpression(it.asIterable().toCons()) }
 
 fun generateIdentifierIR(symbolTable: SymbolTable, expression: Expression) = expression
         .takeIfInstance<IdentifierExpression>()

@@ -50,10 +50,11 @@ fun main(args: Array<String>) {
             when (type) {
                 is TestType.SuccessTest -> {
                     val output = StringOutputStream()
-                    val env = getDefaultRuntimeEnvironment(out = PrintStream(output))
-                    env.setVar("class-of", mFunction<Any, Class<*>> { it::class.java })
+                    val env = getDefaultRuntimeEnvironment(out = PrintStream(output)).apply {
+                        setVar("class-of", mFunction<Any, Class<*>> { it::class.java })
+                    }
 
-                    src.iterator().interpret(env)
+                    ("(include std)\n" + src).iterator().interpret(env)
 
                     val oString = output.string.filter { it != '\r' && it != '\n' }
                     val eString = type.expected.filter { it != '\r' && it != '\n' }
@@ -173,7 +174,7 @@ val helloWorld10 by TestType.SuccessTest("Hello, world!") src """
 val helloWorld11 by TestType.SuccessTest("Hello, world!") src """
 (def a
   (lambda (x)
-    (print stdout x)))
+    (write stdout x)))
 
 (a \H)
 (a \e)
@@ -227,7 +228,7 @@ val tailCall1 by TestType.SuccessTest("0") src """
         (recursion-test (+i x 1))
         0))))
 
-(println stdout (recursion-test 0))
+(println stdout (string (recursion-test 0)))
 """
 
 val tailCall2 by TestType.SuccessTest("0") src """
@@ -245,7 +246,7 @@ val tailCall2 by TestType.SuccessTest("0") src """
         (recursion-test1 (+i x 1))
         0))))
 
-(println stdout (recursion-test1 0))
+(println stdout (string (recursion-test1 0)))
 """
 
 val tailCall3 by TestType.SuccessTest("1") src """
@@ -262,23 +263,21 @@ val tailCall3 by TestType.SuccessTest("1") src """
       (lambda (y) (recursion-test1 (+i x y) 1))
       (lambda (x) x))))
 
-(println stdout (recursion-test1 0 1))
+(println stdout (string (recursion-test1 0 1)))
 """
 
 val quote by TestType.SuccessTest("[nil, 1, 2, 3, [4, 5, 6]]") src """
-(print stdout '(() 1 2 3 (4 5 6)))
+(print stdout (string '(() 1 2 3 (4 5 6))))
 """
 
 val list by TestType.SuccessTest("[1, 2, 3]") src """
-(def nil? (= nil))
-
 (defmacro list
   (lambda (x)
     (if (nil? x)
       nil
       `(cons ,(car x) (list ~(cdr x))))))
 
-(print stdout (list 1 2 3))
+(print stdout (string (list 1 2 3)))
 """
 
 val numberTokenizer by TestType.SuccessTest("""
@@ -290,16 +289,16 @@ class java.lang.Float
 class java.lang.Double
 """
 ) src """
-(println stdout (class-of 0b))
-(println stdout (class-of 0s))
-(println stdout (class-of 0i))
-(println stdout (class-of 0l))
-(println stdout (class-of 0f))
-(println stdout (class-of 0d))
+(println stdout (string (class-of 0b)))
+(println stdout (string (class-of 0s)))
+(println stdout (string (class-of 0i)))
+(println stdout (string (class-of 0l)))
+(println stdout (string (class-of 0f)))
+(println stdout (string (class-of 0d)))
 """
 
 val plusString by TestType.SuccessTest("(Int) -> (Int) -> Int") src """
-(println stdout +i)
+(println stdout (string +i))
 """
 
 val fibonacci by TestType.SuccessTest("""
@@ -329,7 +328,7 @@ val fibonacci by TestType.SuccessTest("""
 
 (loop 10
   (lambda (x)
-    (print stdout x)
+    (print stdout (string x))
     (print stdout " : ")
-    (println stdout (fib x))))
+    (println stdout (string (fib x)))))
 """

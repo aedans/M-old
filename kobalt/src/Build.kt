@@ -6,13 +6,13 @@ val m = project {
     name = "M"
     group = "io.github.aedans"
     artifactId = "m"
-    version = "0.17"
+    version = "0.18"
 
     dependencies {
         compile("org.jetbrains.kotlin:kotlin-runtime:1.1.2")
         compile("org.jetbrains.kotlin:kotlin-stdlib:1.1.2")
         compile("org.jetbrains.kotlin:kotlin-reflect:1.1.2")
-        compile("io.github.aedans:kotlin-cons:1.1.0")
+        compile("io.github.aedans:kotlin-cons:1.2.1")
     }
 
     assemble {

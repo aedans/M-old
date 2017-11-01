@@ -146,7 +146,7 @@ fun DefIRExpression.toEvaluable() = object : Evaluable {
         if (accessibleMemoryLocation.get(memory) == Nil)
             accessibleMemoryLocation.set(memory, evaluableExpression.eval(memory))
         else
-            throw Exception("Cannot redefine $accessibleMemoryLocation")
+            throw Exception("Cannot redefine $memoryLocation")
     }
 }
 

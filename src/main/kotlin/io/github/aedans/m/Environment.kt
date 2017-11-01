@@ -1,13 +1,9 @@
 package io.github.aedans.m
 
-import io.github.aedans.cons.Cons
-import io.github.aedans.cons.Nil
-import io.github.aedans.cons.cons
-import io.github.aedans.cons.consOf
+import io.github.aedans.cons.*
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
-import java.io.PrintStream
 
 /**
  * Created by Aedan Smith.
@@ -75,6 +71,9 @@ fun getDefaultRuntimeEnvironment(
     setVar("stderr", err)
     setVar("write", mFunction<OutputStream, Char, Unit> { p, c -> p.write(c.toInt()) })
     setVar("read", mFunction<InputStream, Char> { i -> i.read().toChar() })
+    setVar("newline", '\n')
+
+    setVar("string", mFunction<Any, Cons<Char>> { it.toString().asIterable().toCons() })
 
     setVar("defmacro", Macro { it: Any ->
         val name = ((it as Cons<*>).car as IdentifierExpression).name
@@ -86,12 +85,13 @@ fun getDefaultRuntimeEnvironment(
     })
 
     setVar("include", Macro { it: Any ->
-        val name = (it as Cons<*>).car as String
+        @Suppress("UNCHECKED_CAST")
+        val name = ((it as Cons<*>).car as IdentifierExpression).name
         val file = File(name).absoluteFile
         if (file.isDirectory)
             file
                     .listFiles()
-                    .map { consOf(IdentifierExpression("include"), "$file/${it.nameWithoutExtension}") }
+                    .map { consOf(IdentifierExpression("include"), IdentifierExpression("$file/${it.nameWithoutExtension}")) }
                     .let { IdentifierExpression("do") cons it.toConsList() }
         else
             File(file.absolutePath + ".m")
@@ -108,7 +108,4 @@ fun getDefaultRuntimeEnvironment(
         @Suppress("UNCHECKED_CAST")
         QuoteExpression((it as SExpression).car.expand(this))
     })
-
-    setVar("print", mFunction<OutputStream, Any, Unit> { p, o -> PrintStream(p).print(o) })
-    setVar("println", mFunction<OutputStream, Any, Unit> { p, o -> PrintStream(p).println(o) })
 }
