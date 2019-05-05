@@ -1,10 +1,8 @@
 plugins {
     id 'java'
-    id 'application'
     id 'org.jetbrains.kotlin.jvm' version '1.3.21'
 }
 
-mainClassName = 'io.github.aedans.m.Cli'
 sourceCompatibility = 1.8
 
 repositories {
@@ -14,9 +12,16 @@ repositories {
 
 dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    compile 'org.jetbrains.kotlin:kotlin-reflect'
     compile 'io.github.aedans:kons:4.0.1'
     testCompile 'io.github.aedans:kons:4.0.1'
+}
+
+task fatJar(type: Jar) {
+    manifest { attributes 'Main-Class': 'io.github.aedans.m.Cli' }
+    baseName = project.name
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
 
 compileKotlin {

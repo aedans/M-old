@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-java -jar libs/M.jar $@
+java -jar build/libs/M.jar $@

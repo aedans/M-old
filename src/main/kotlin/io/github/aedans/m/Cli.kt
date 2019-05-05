@@ -1,3 +1,5 @@
+@file:JvmName("Cli")
+
 package io.github.aedans.m
 
 import java.io.File
