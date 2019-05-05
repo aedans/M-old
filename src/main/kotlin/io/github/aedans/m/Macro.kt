@@ -1,6 +1,6 @@
 package io.github.aedans.m
 
-import io.github.aedans.cons.Nil
+import io.github.aedans.kons.Nil
 
 /**
  * Created by Aedan Smith.
@@ -22,7 +22,7 @@ fun Expression.expand(env: RuntimeEnvironment): Expression = takeIfInstance<SExp
             expr[0].takeIfInstance<IdentifierExpression>()
                     ?.let { env.getVar(it.name) }
                     ?.takeIfInstance<Macro>()
-                    ?.let { macro -> macro(expr.cdr) }
+                    ?.let { macro -> macro(expr.unsafeCdr) }
                     ?.expand(env)
                     ?: expr
         }

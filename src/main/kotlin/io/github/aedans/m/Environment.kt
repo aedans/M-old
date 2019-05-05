@@ -1,6 +1,6 @@
 package io.github.aedans.m
 
-import io.github.aedans.cons.*
+import io.github.aedans.kons.*
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -77,7 +77,7 @@ fun getDefaultRuntimeEnvironment(
 
     setVar("defmacro", Macro { it: Any ->
         val name = ((it as Cons<*>).car as IdentifierExpression).name
-        val lambda = it.cdr.car as Cons<*>
+        val lambda = it.unsafeCdr.car as Cons<*>
         @Suppress("UNCHECKED_CAST")
         val macro = Macro(lambda.toIRExpression(symbolTable).toEvaluable().eval(memory) as MFunction)
         setVar(name, macro)
@@ -106,6 +106,6 @@ fun getDefaultRuntimeEnvironment(
 
     setVar("macroexpand", Macro { it: Any ->
         @Suppress("UNCHECKED_CAST")
-        QuoteExpression((it as SExpression).car.expand(this))
+        QuoteExpression((it as SExpression).unsafeCar.expand(this))
     })
 }

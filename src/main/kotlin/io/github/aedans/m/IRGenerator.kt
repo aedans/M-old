@@ -1,8 +1,8 @@
 package io.github.aedans.m
 
-import io.github.aedans.cons.Cons
-import io.github.aedans.cons.Nil
-import io.github.aedans.cons.toCons
+import io.github.aedans.kons.Cons
+import io.github.aedans.kons.Nil
+import io.github.aedans.kons.toCons
 import java.util.HashMap
 
 /**
@@ -60,7 +60,7 @@ private inline fun generateUniqueSExpressionIR(
         crossinline func: (SymbolTable, SExpression) -> IRExpression
 ) = expression.takeIfInstance<SExpression>()
         ?.takeIf { it[0].let { it is IdentifierExpression && it.name == name } }
-        ?.let { func(symbolTable, it.cdr) }
+        ?.let { func(symbolTable, it.unsafeCdr) }
 
 fun generateNilLiteralIR(expression: Expression) = generateLiteralIR<Nil>(expression, NilLiteralIRExpression)
 fun generateCharLiteralIR(expression: Expression) = generateLiteralIR<CharLiteralExpression>(expression)

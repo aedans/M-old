@@ -1,7 +1,7 @@
 package io.github.aedans.m
 
-import io.github.aedans.cons.Cons
-import io.github.aedans.cons.toCons
+import io.github.aedans.kons.Cons
+import io.github.aedans.kons.toCons
 
 /**
  * Created by Aedan Smith.
